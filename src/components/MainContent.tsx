@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { BarChart, FileText, Brain, TrendingUp } from 'lucide-react';
+import { BarChart, FileText, Brain, TrendingUp, Upload } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import UploadArea from './UploadArea';
