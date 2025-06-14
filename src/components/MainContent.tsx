@@ -4,9 +4,11 @@ import { BarChart, FileText, Brain, TrendingUp, Upload } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import UploadArea from './UploadArea';
+import AnalysisInterface from './AnalysisInterface';
 
 const MainContent = () => {
   const [activeTab, setActiveTab] = useState('upload');
+  const [hasUploadedFiles, setHasUploadedFiles] = useState(false);
 
   const stats = [
     { label: 'Documents Processed', value: '142', icon: FileText, color: 'text-blue-400' },
@@ -14,6 +16,14 @@ const MainContent = () => {
     { label: 'Analysis Reports', value: '23', icon: BarChart, color: 'text-green-400' },
     { label: 'Trend Predictions', value: '15', icon: TrendingUp, color: 'text-purple-400' },
   ];
+
+  // Simulate file upload detection
+  React.useEffect(() => {
+    // In a real implementation, this would be passed from UploadArea
+    // For demo purposes, we'll set it to true after a delay
+    const timer = setTimeout(() => setHasUploadedFiles(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <main className="flex-1 p-6 bg-gray-950">
@@ -77,6 +87,7 @@ const MainContent = () => {
 
           <TabsContent value="upload" className="space-y-6">
             <UploadArea />
+            <AnalysisInterface hasUploadedFiles={hasUploadedFiles} />
           </TabsContent>
 
           <TabsContent value="analysis" className="space-y-6">
