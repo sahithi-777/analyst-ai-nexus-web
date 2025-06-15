@@ -3,12 +3,17 @@ import React, { useState } from 'react';
 import { FileText, Network, Clock, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AnalysisResult } from '@/utils/fileProcessor';
 import SummaryTab from './analysis/SummaryTab';
 import ConnectionsTab from './analysis/ConnectionsTab';
 import TimelineTab from './analysis/TimelineTab';
 import ContradictionsTab from './analysis/ContradictionsTab';
 
-const AnalysisResults = () => {
+interface AnalysisResultsProps {
+  results: AnalysisResult;
+}
+
+const AnalysisResults = ({ results }: AnalysisResultsProps) => {
   const [activeTab, setActiveTab] = useState('summary');
 
   return (
@@ -16,8 +21,26 @@ const AnalysisResults = () => {
       <div className="mb-6">
         <h3 className="text-xl font-semibold text-white mb-2">Analysis Results</h3>
         <p className="text-gray-400">
-          Comprehensive analysis of your uploaded documents
+          Comprehensive analysis of {results.statistics.totalDocuments} uploaded documents
         </p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          <div className="text-center">
+            <div className="text-lg font-bold text-blue-400">{results.statistics.totalDocuments}</div>
+            <div className="text-xs text-gray-400">Documents</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-bold text-green-400">{results.statistics.totalWords.toLocaleString()}</div>
+            <div className="text-xs text-gray-400">Total Words</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-bold text-purple-400">{results.connections.length}</div>
+            <div className="text-xs text-gray-400">Connections</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-bold text-red-400">{results.contradictions.length}</div>
+            <div className="text-xs text-gray-400">Contradictions</div>
+          </div>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -54,19 +77,19 @@ const AnalysisResults = () => {
 
         <div className="animate-fade-in">
           <TabsContent value="summary" className="space-y-6">
-            <SummaryTab />
+            <SummaryTab results={results} />
           </TabsContent>
 
           <TabsContent value="connections" className="space-y-6">
-            <ConnectionsTab />
+            <ConnectionsTab connections={results.connections} />
           </TabsContent>
 
           <TabsContent value="timeline" className="space-y-6">
-            <TimelineTab />
+            <TimelineTab timeline={results.timeline} />
           </TabsContent>
 
           <TabsContent value="contradictions" className="space-y-6">
-            <ContradictionsTab />
+            <ContradictionsTab contradictions={results.contradictions} />
           </TabsContent>
         </div>
       </Tabs>

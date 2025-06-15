@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Upload, FileText, X, Link, AlertCircle, CheckCircle, File, FileImage, FileSpreadsheet } from 'lucide-react';
+import { Upload, FileText, X, Link, AlertCircle, CheckCircle, File, FileImage, FileSpreadsheet, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { FileProcessor, ProcessedFile } from '@/utils/fileProcessor';
 
 interface UploadedFile {
   id: string;
@@ -13,22 +14,29 @@ interface UploadedFile {
   size?: number;
   type: string;
   progress: number;
-  status: 'uploading' | 'completed' | 'error';
+  status: 'uploading' | 'processing' | 'completed' | 'error';
   error?: string;
+  processedData?: ProcessedFile;
 }
 
-const UploadArea = () => {
+interface UploadAreaProps {
+  onFilesProcessed?: (files: ProcessedFile[]) => void;
+  processedFiles?: ProcessedFile[];
+}
+
+const UploadArea = ({ onFilesProcessed, processedFiles = [] }: UploadAreaProps) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [urlInput, setUrlInput] = useState('');
+  const [selectedPreview, setSelectedPreview] = useState<ProcessedFile | null>(null);
   const { toast } = useToast();
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-  const ACCEPTED_FILE_TYPES = ['.pdf', '.csv', '.txt', '.docx', '.doc', '.xlsx', '.xls'];
+  const ACCEPTED_FILE_TYPES = ['.pdf', '.csv', '.txt', '.docx', '.doc'];
 
   const getFileIcon = (type: string) => {
     if (type.includes('pdf')) return FileText;
-    if (type.includes('spreadsheet') || type.includes('csv') || type.includes('excel')) return FileSpreadsheet;
+    if (type.includes('csv') || type.includes('excel')) return FileSpreadsheet;
     if (type.includes('image')) return FileImage;
     if (type === 'url') return Link;
     return File;
@@ -47,25 +55,64 @@ const UploadArea = () => {
     return null;
   };
 
-  const simulateUpload = async (fileId: string): Promise<void> => {
-    return new Promise((resolve) => {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 20;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          setUploadedFiles(prev => 
-            prev.map(f => f.id === fileId ? { ...f, progress: 100, status: 'completed' } : f)
-          );
-          resolve();
+  const processAndUploadFile = async (fileId: string, file: File): Promise<void> => {
+    try {
+      // Update status to processing
+      setUploadedFiles(prev => 
+        prev.map(f => f.id === fileId ? { ...f, status: 'processing', progress: 50 } : f)
+      );
+
+      // Process the file
+      const processedData = await FileProcessor.processFile(file);
+      
+      // Update with processed data
+      setUploadedFiles(prev => 
+        prev.map(f => f.id === fileId ? { 
+          ...f, 
+          status: processedData.status === 'error' ? 'error' : 'completed',
+          progress: 100,
+          processedData,
+          error: processedData.error
+        } : f)
+      );
+
+      if (processedData.status === 'completed') {
+        toast({
+          title: "File Processed Successfully",
+          description: `${file.name} has been processed and is ready for analysis.`,
+        });
+        
+        // Notify parent component
+        const allProcessedFiles = [...processedFiles];
+        const existingIndex = allProcessedFiles.findIndex(f => f.name === processedData.name);
+        if (existingIndex >= 0) {
+          allProcessedFiles[existingIndex] = processedData;
         } else {
-          setUploadedFiles(prev => 
-            prev.map(f => f.id === fileId ? { ...f, progress: Math.round(progress) } : f)
-          );
+          allProcessedFiles.push(processedData);
         }
-      }, 200);
-    });
+        onFilesProcessed?.(allProcessedFiles);
+      } else {
+        toast({
+          title: "Processing Failed",
+          description: `Failed to process ${file.name}: ${processedData.error}`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      setUploadedFiles(prev => 
+        prev.map(f => f.id === fileId ? { 
+          ...f, 
+          status: 'error', 
+          error: error instanceof Error ? error.message : 'Processing failed' 
+        } : f)
+      );
+      
+      toast({
+        title: "Processing Error",
+        description: `An error occurred while processing ${file.name}`,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleFiles = async (files: File[]) => {
@@ -106,25 +153,11 @@ const UploadArea = () => {
     
     setUploadedFiles(prev => [...prev, ...newFiles]);
     
+    // Process valid files
     newFiles
-      .filter(f => f.status === 'uploading')
-      .forEach(async (file) => {
-        try {
-          await simulateUpload(file.id);
-          toast({
-            title: "Upload Successful",
-            description: `${file.name} has been uploaded successfully.`,
-          });
-        } catch (error) {
-          setUploadedFiles(prev => 
-            prev.map(f => f.id === file.id ? { ...f, status: 'error', error: 'Upload failed' } : f)
-          );
-          toast({
-            title: "Upload Failed",
-            description: `Failed to upload ${file.name}`,
-            variant: "destructive"
-          });
-        }
+      .filter(f => f.status === 'uploading' && f.file)
+      .forEach(async (uploadFile) => {
+        await processAndUploadFile(uploadFile.id, uploadFile.file!);
       });
   };
 
@@ -153,7 +186,7 @@ const UploadArea = () => {
     }
   };
 
-  const handleUrlAdd = () => {
+  const handleUrlAdd = async () => {
     if (!urlInput.trim()) return;
     
     try {
@@ -164,18 +197,16 @@ const UploadArea = () => {
         url: urlInput,
         name: urlInput,
         type: 'url',
-        progress: 0,
-        status: 'uploading'
+        progress: 100,
+        status: 'completed'
       };
       
       setUploadedFiles(prev => [...prev, newUrlFile]);
       setUrlInput('');
       
-      simulateUpload(urlId).then(() => {
-        toast({
-          title: "URL Added",
-          description: `Successfully added URL for processing.`,
-        });
+      toast({
+        title: "URL Added",
+        description: `URL added successfully. Note: URL content processing requires additional implementation.`,
       });
       
     } catch (error) {
@@ -188,7 +219,14 @@ const UploadArea = () => {
   };
 
   const removeFile = (id: string) => {
+    const fileToRemove = uploadedFiles.find(f => f.id === id);
     setUploadedFiles(prev => prev.filter(f => f.id !== id));
+    
+    if (fileToRemove?.processedData) {
+      const updatedFiles = processedFiles.filter(f => f.id !== fileToRemove.processedData!.id);
+      onFilesProcessed?.(updatedFiles);
+    }
+    
     toast({
       title: "File Removed",
       description: "File has been removed from the upload list.",
@@ -206,10 +244,10 @@ const UploadArea = () => {
 
   return (
     <div className="space-y-4">
-      {/* Main Upload Zone - More Compact */}
+      {/* Upload Zone */}
       <div
         className={`
-          relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 max-h-64
+          relative border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300
           ${isDragOver 
             ? 'border-blue-500 bg-blue-500/10 scale-[1.02]' 
             : 'border-gray-600 hover:border-gray-500 hover:bg-gray-800/30'
@@ -219,25 +257,23 @@ const UploadArea = () => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div className="space-y-4">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-            <Upload className="h-8 w-8 text-white" />
+        <div className="space-y-3">
+          <div className="mx-auto w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
+            <Upload className="h-6 w-6 text-white" />
           </div>
           
           <div>
-            <h3 className="text-xl font-semibold text-white mb-2">
-              Upload Research Documents
-            </h3>
-            <p className="text-gray-400 text-sm mb-3">
-              Drag and drop your files here, or click to browse
+            <h3 className="text-lg font-semibold text-white mb-1">Upload Documents</h3>
+            <p className="text-gray-400 text-sm mb-2">
+              Drag and drop files or click to browse
             </p>
-            <p className="text-xs text-gray-500 mb-4">
-              Supports PDF, CSV, TXT, DOCX, XLSX files up to 10MB each
+            <p className="text-xs text-gray-500">
+              Supports PDF, CSV, TXT files up to 10MB each
             </p>
           </div>
 
           <Button
-            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-2"
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
             onClick={() => document.getElementById('file-upload')?.click()}
           >
             <Upload className="h-4 w-4 mr-2" />
@@ -255,16 +291,13 @@ const UploadArea = () => {
         />
       </div>
 
-      {/* URL Input Section - More Compact and Inline */}
-      <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+      {/* URL Input */}
+      <div className="bg-gray-800 rounded-lg p-3 border border-gray-700">
         <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2 flex-shrink-0">
-            <Link className="h-5 w-5 text-cyan-400" />
-            <span className="text-white font-medium">Add URL:</span>
-          </div>
+          <Link className="h-4 w-4 text-cyan-400 flex-shrink-0" />
           <Input
             type="url"
-            placeholder="https://example.com/article"
+            placeholder="https://example.com/document"
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
             className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 flex-1"
@@ -272,18 +305,19 @@ const UploadArea = () => {
           />
           <Button
             onClick={handleUrlAdd}
-            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-4 py-2 flex-shrink-0"
+            size="sm"
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
           >
             Add
           </Button>
         </div>
       </div>
 
-      {/* Uploaded Files List */}
+      {/* File List */}
       {uploadedFiles.length > 0 && (
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <h4 className="text-lg font-semibold text-white mb-4">Uploaded Files ({uploadedFiles.length})</h4>
-          <div className="space-y-3 max-h-64 overflow-y-auto">
+          <h4 className="text-white font-medium mb-3">Files ({uploadedFiles.length})</h4>
+          <div className="space-y-3 max-h-48 overflow-y-auto">
             {uploadedFiles.map((uploadedFile) => {
               const IconComponent = getFileIcon(uploadedFile.type);
               return (
@@ -294,62 +328,106 @@ const UploadArea = () => {
                   <div className="flex items-center space-x-3 flex-1 min-w-0">
                     <div className="flex-shrink-0">
                       {uploadedFile.status === 'completed' && (
-                        <CheckCircle className="h-5 w-5 text-green-400" />
+                        <CheckCircle className="h-4 w-4 text-green-400" />
                       )}
                       {uploadedFile.status === 'error' && (
-                        <AlertCircle className="h-5 w-5 text-red-400" />
+                        <AlertCircle className="h-4 w-4 text-red-400" />
                       )}
-                      {uploadedFile.status === 'uploading' && (
-                        <IconComponent className="h-5 w-5 text-blue-400" />
+                      {(uploadedFile.status === 'uploading' || uploadedFile.status === 'processing') && (
+                        <IconComponent className="h-4 w-4 text-blue-400" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white truncate">
                         {uploadedFile.name}
                       </p>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 text-xs">
                         {uploadedFile.size && (
-                          <p className="text-xs text-gray-400">
-                            {formatFileSize(uploadedFile.size)}
-                          </p>
+                          <span className="text-gray-400">{formatFileSize(uploadedFile.size)}</span>
+                        )}
+                        {uploadedFile.status === 'processing' && (
+                          <span className="text-blue-400">Processing...</span>
+                        )}
+                        {uploadedFile.status === 'completed' && uploadedFile.processedData && (
+                          <span className="text-green-400">
+                            {uploadedFile.processedData.metadata.wordCount} words
+                          </span>
                         )}
                         {uploadedFile.status === 'error' && uploadedFile.error && (
-                          <p className="text-xs text-red-400">{uploadedFile.error}</p>
+                          <span className="text-red-400">{uploadedFile.error}</span>
                         )}
                       </div>
-                      {uploadedFile.status === 'uploading' && (
+                      {(uploadedFile.status === 'uploading' || uploadedFile.status === 'processing') && (
                         <div className="mt-2">
-                          <Progress 
-                            value={uploadedFile.progress} 
-                            className="h-1 bg-gray-600"
-                          />
-                          <p className="text-xs text-gray-400 mt-1">
-                            {uploadedFile.progress}% uploaded
-                          </p>
+                          <Progress value={uploadedFile.progress} className="h-1 bg-gray-600" />
                         </div>
                       )}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeFile(uploadedFile.id)}
-                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all ml-2 flex-shrink-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center space-x-2">
+                    {uploadedFile.status === 'completed' && uploadedFile.processedData && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedPreview(uploadedFile.processedData!)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-400 transition-all"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(uploadedFile.id)}
+                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               );
             })}
           </div>
-          
-          {uploadedFiles.some(f => f.status === 'completed') && (
-            <div className="mt-4 pt-3 border-t border-gray-600">
-              <Button className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white">
-                Process Documents ({uploadedFiles.filter(f => f.status === 'completed').length} files)
+        </div>
+      )}
+
+      {/* File Preview Modal */}
+      {selectedPreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <h3 className="text-lg font-semibold text-white">{selectedPreview.name}</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedPreview(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
               </Button>
             </div>
-          )}
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              <div className="space-y-3 mb-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-400">Word Count:</span>
+                    <span className="text-white ml-2">{selectedPreview.metadata.wordCount}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">File Size:</span>
+                    <span className="text-white ml-2">{formatFileSize(selectedPreview.size)}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-900 rounded-lg p-4">
+                <h4 className="text-white font-medium mb-2">Extracted Content:</h4>
+                <pre className="text-gray-300 text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
+                  {selectedPreview.extractedText.substring(0, 2000)}
+                  {selectedPreview.extractedText.length > 2000 && '...\n\n[Content truncated for preview]'}
+                </pre>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

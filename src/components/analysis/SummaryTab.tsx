@@ -3,8 +3,13 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, FileText, TrendingUp, Users, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { AnalysisResult } from '@/utils/fileProcessor';
 
-const SummaryTab = () => {
+interface SummaryTabProps {
+  results: AnalysisResult;
+}
+
+const SummaryTab = ({ results }: SummaryTabProps) => {
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
     overview: true,
     insights: false,
@@ -20,10 +25,30 @@ const SummaryTab = () => {
   };
 
   const keyStats = [
-    { label: 'Documents Analyzed', value: '12', icon: FileText, color: 'text-blue-400' },
-    { label: 'Key Insights', value: '23', icon: TrendingUp, color: 'text-green-400' },
-    { label: 'Stakeholders Mentioned', value: '15', icon: Users, color: 'text-purple-400' },
-    { label: 'Time Period Covered', value: '18 months', icon: Calendar, color: 'text-cyan-400' }
+    { 
+      label: 'Documents Analyzed', 
+      value: results.statistics.totalDocuments.toString(), 
+      icon: FileText, 
+      color: 'text-blue-400' 
+    },
+    { 
+      label: 'Key Insights', 
+      value: results.summary.keyInsights.length.toString(), 
+      icon: TrendingUp, 
+      color: 'text-green-400' 
+    },
+    { 
+      label: 'Main Themes', 
+      value: results.summary.mainThemes.length.toString(), 
+      icon: Users, 
+      color: 'text-purple-400' 
+    },
+    { 
+      label: 'Total Words', 
+      value: results.statistics.totalWords.toLocaleString(), 
+      icon: Calendar, 
+      color: 'text-cyan-400' 
+    }
   ];
 
   return (
@@ -67,14 +92,7 @@ const SummaryTab = () => {
             <CollapsibleContent>
               <CardContent className="pt-0">
                 <div className="text-gray-300 space-y-3">
-                  <p>
-                    The analyzed documents reveal a comprehensive research initiative spanning multiple domains 
-                    with significant implications for strategic decision-making.
-                  </p>
-                  <p>
-                    Key findings indicate strong convergence around emerging technologies, with particular 
-                    emphasis on artificial intelligence applications and their potential market impact.
-                  </p>
+                  <p>{results.summary.executiveSummary}</p>
                 </div>
               </CardContent>
             </CollapsibleContent>
@@ -99,24 +117,11 @@ const SummaryTab = () => {
             <CollapsibleContent>
               <CardContent className="pt-0">
                 <div className="space-y-3">
-                  <div className="p-3 bg-gray-800 rounded-lg">
-                    <h4 className="text-cyan-400 font-semibold mb-2">Market Opportunity</h4>
-                    <p className="text-gray-300 text-sm">
-                      Documentation suggests a $2.3B market opportunity in the analyzed sector
-                    </p>
-                  </div>
-                  <div className="p-3 bg-gray-800 rounded-lg">
-                    <h4 className="text-green-400 font-semibold mb-2">Technology Readiness</h4>
-                    <p className="text-gray-300 text-sm">
-                      Multiple sources confirm technology maturity reaching commercial viability
-                    </p>
-                  </div>
-                  <div className="p-3 bg-gray-800 rounded-lg">
-                    <h4 className="text-purple-400 font-semibold mb-2">Competitive Landscape</h4>
-                    <p className="text-gray-300 text-sm">
-                      Analysis reveals 3 major competitors with distinct strategic approaches
-                    </p>
-                  </div>
+                  {results.summary.keyInsights.map((insight, index) => (
+                    <div key={index} className="p-3 bg-gray-800 rounded-lg">
+                      <p className="text-gray-300 text-sm">{insight}</p>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </CollapsibleContent>
@@ -129,7 +134,7 @@ const SummaryTab = () => {
             <CollapsibleTrigger className="w-full">
               <CardHeader className="hover:bg-gray-600 transition-colors cursor-pointer">
                 <CardTitle className="text-white flex items-center justify-between">
-                  <span>Common Themes</span>
+                  <span>Main Themes</span>
                   {openSections.themes ? (
                     <ChevronDown className="h-5 w-5" />
                   ) : (
@@ -141,7 +146,7 @@ const SummaryTab = () => {
             <CollapsibleContent>
               <CardContent className="pt-0">
                 <div className="flex flex-wrap gap-2">
-                  {['Artificial Intelligence', 'Market Growth', 'Innovation', 'Sustainability', 'Digital Transformation', 'Risk Management'].map((theme, index) => (
+                  {results.summary.mainThemes.map((theme, index) => (
                     <span key={index} className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-sm">
                       {theme}
                     </span>
@@ -170,24 +175,12 @@ const SummaryTab = () => {
             <CollapsibleContent>
               <CardContent className="pt-0">
                 <div className="space-y-2">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-green-400 rounded-full mt-2"></div>
-                    <p className="text-gray-300 text-sm">
-                      Prioritize investment in AI capabilities to maintain competitive advantage
-                    </p>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2"></div>
-                    <p className="text-gray-300 text-sm">
-                      Develop strategic partnerships to accelerate market entry
-                    </p>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
-                    <p className="text-gray-300 text-sm">
-                      Focus on sustainability initiatives to align with market trends
-                    </p>
-                  </div>
+                  {results.summary.recommendations.map((recommendation, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-green-400 rounded-full mt-2"></div>
+                      <p className="text-gray-300 text-sm">{recommendation}</p>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </CollapsibleContent>
