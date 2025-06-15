@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Brain, FileText, MessageSquare, Upload as UploadIcon, ChartBar, Lightbulb } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import RealUploadArea from '@/components/upload/RealUploadArea';
 import RealAnalysisInterface from '@/components/analysis/RealAnalysisInterface';
 import RealChatInterface from '@/components/chat/RealChatInterface';
@@ -16,6 +17,7 @@ const RealDashboard = () => {
   const [generatedQuestions, setGeneratedQuestions] = useState<any[]>([]);
   const [initialChatQuestion, setInitialChatQuestion] = useState<string>('');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleFilesProcessed = (files: RealProcessedFile[]) => {
     setProcessedFiles(files);
@@ -60,7 +62,7 @@ const RealDashboard = () => {
   };
 
   const handleNavigateToProfile = () => {
-    window.location.href = '/profile';
+    navigate('/profile');
   };
 
   // Calculate real statistics from actual data

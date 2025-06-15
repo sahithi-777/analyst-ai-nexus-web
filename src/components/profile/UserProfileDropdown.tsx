@@ -11,13 +11,23 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface UserProfileDropdownProps {
-  onNavigateToProfile: () => void;
+  onNavigateToProfile?: () => void;
 }
 
 const UserProfileDropdown = ({ onNavigateToProfile }: UserProfileDropdownProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleProfileClick = () => {
+    if (onNavigateToProfile) {
+      onNavigateToProfile();
+    } else {
+      navigate('/profile');
+    }
+  };
 
   const handleLogout = () => {
     toast({
@@ -56,14 +66,14 @@ const UserProfileDropdown = ({ onNavigateToProfile }: UserProfileDropdownProps) 
         </div>
         <DropdownMenuSeparator className="bg-gray-700" />
         <DropdownMenuItem 
-          onClick={onNavigateToProfile}
+          onClick={handleProfileClick}
           className="text-gray-300 hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
         >
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
-          onClick={onNavigateToProfile}
+          onClick={handleProfileClick}
           className="text-gray-300 hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
         >
           <Settings className="mr-2 h-4 w-4" />
