@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Brain, FileText, MessageSquare, Upload as UploadIcon, ChartBar, Lightbulb } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -15,6 +14,7 @@ const RealDashboard = () => {
   const [analysisResults, setAnalysisResults] = useState<RealAnalysisResult | null>(null);
   const [activeTab, setActiveTab] = useState<"upload" | "analysis" | "chat" | "questions">("upload");
   const [generatedQuestions, setGeneratedQuestions] = useState<any[]>([]);
+  const [initialChatQuestion, setInitialChatQuestion] = useState<string>('');
   const { toast } = useToast();
 
   const handleFilesProcessed = (files: RealProcessedFile[]) => {
@@ -41,19 +41,21 @@ const RealDashboard = () => {
   };
 
   const handleQuestionExecute = (question: string) => {
+    setInitialChatQuestion(question);
     setActiveTab('chat');
-    setTimeout(() => {
-      console.log('Executing question:', question);
-      toast({
-        title: "Question Sent to Claude",
-        description: "Your research question is being processed",
-      });
-    }, 100);
+    toast({
+      title: "Question Sent to Claude",
+      description: "Your research question is being processed",
+    });
   };
 
   const handleTabChange = (value: string) => {
     if (value === "upload" || value === "analysis" || value === "chat" || value === "questions") {
       setActiveTab(value);
+      // Clear initial question when switching away from chat
+      if (value !== 'chat') {
+        setInitialChatQuestion('');
+      }
     }
   };
 
@@ -188,7 +190,10 @@ const RealDashboard = () => {
               </TabsContent>
 
               <TabsContent value="chat" className="mt-6">
-                <RealChatInterface processedFiles={processedFiles} />
+                <RealChatInterface 
+                  processedFiles={processedFiles} 
+                  initialQuestion={initialChatQuestion}
+                />
               </TabsContent>
             </Tabs>
           </div>
