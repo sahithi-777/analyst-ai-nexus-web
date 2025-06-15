@@ -65,13 +65,15 @@ const EnhancedUploadArea = ({
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Complete processing
+    const extractedText = `Sample extracted text from ${file.name}...`;
     const mockProcessedData: ProcessedFile = {
       id: uploadId,
       name: file.name,
       type: file.type,
       size: file.size,
+      content: extractedText,
+      extractedText: extractedText,
       status: 'completed',
-      extractedText: `Sample extracted text from ${file.name}...`,
       metadata: {
         wordCount: Math.floor(Math.random() * 5000) + 500,
         pageCount: Math.floor(Math.random() * 20) + 1,
