@@ -66,10 +66,10 @@ const RealUploadArea = ({ onFilesProcessed }: RealUploadAreaProps) => {
       setUploadedFiles(prev => 
         prev.map(f => f.id === fileId ? { 
           ...f, 
-          status: processedData.status === 'error' ? 'error' : 'completed',
+          status: processedData.status === 'failed' ? 'error' : 'completed',
           progress: 100,
           processedData,
-          error: processedData.error
+          error: processedData.status === 'failed' ? processedData.error : undefined
         } : f)
       );
 
@@ -85,7 +85,7 @@ const RealUploadArea = ({ onFilesProcessed }: RealUploadAreaProps) => {
       } else {
         toast({
           title: "Processing Failed",
-          description: `Failed to process ${file.name}: ${processedData.error}`,
+          description: `Failed to process ${file.name}: ${processedData.error || 'Unknown error'}`,
           variant: "destructive"
         });
       }
@@ -290,7 +290,7 @@ const RealUploadArea = ({ onFilesProcessed }: RealUploadAreaProps) => {
                         )}
                         {uploadedFile.status === 'completed' && uploadedFile.processedData && (
                           <span className="text-green-400">
-                            {uploadedFile.processedData.metadata.wordCount} words • Ready for analysis
+                            {uploadedFile.processedData.metadata?.wordCount} words • Ready for analysis
                           </span>
                         )}
                         {uploadedFile.status === 'error' && uploadedFile.error && (

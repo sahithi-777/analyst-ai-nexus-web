@@ -21,9 +21,9 @@ const ExportResults = ({ analysisResults, processedFiles }: ExportResultsProps) 
       analysis: analysisResults,
       documents: processedFiles.map(f => ({
         name: f.name,
-        wordCount: f.metadata.wordCount,
-        topic: f.metadata.topic,
-        category: f.metadata.category,
+        wordCount: f.metadata?.wordCount,
+        topic: f.metadata?.topic,
+        category: f.metadata?.category,
         status: f.status
       }))
     };

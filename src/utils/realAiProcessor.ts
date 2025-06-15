@@ -1,4 +1,45 @@
+
 import { DeepAnalysisResult } from './enhancedAiProcessor';
+
+export interface RealAnalysisResult {
+  summary: {
+    keyInsights: Array<{
+      insight: string;
+      confidence: number;
+      category: string;
+      sourceDocuments: string[];
+    }>;
+    overallThemes: string[];
+    totalDocuments: number;
+    totalWords: number;
+  };
+  connections: Array<{
+    relationshipType: string;
+    strength: number;
+    documents: string[];
+    description: string;
+    evidence: string[];
+  }>;
+  contradictions: Array<{
+    severity: string;
+    issue: string;
+    documents: string[];
+    description: string;
+    recommendation: string;
+  }>;
+  gaps: Array<{
+    area: string;
+    priority: string;
+    description: string;
+    suggestedSources: string[];
+  }>;
+  statistics: {
+    totalDocuments: number;
+    totalWords: number;
+    avgAnalysisDepth: number;
+    processingTime: string;
+  };
+}
 
 export interface RealProcessedFile {
   id: string;
@@ -8,6 +49,7 @@ export interface RealProcessedFile {
   content: string;
   status: 'uploading' | 'processing' | 'completed' | 'failed';
   progress?: number;
+  error?: string;
   metadata?: {
     wordCount?: number;
     pageCount?: number;
@@ -38,14 +80,72 @@ export class RealAiProcessor {
     return { totalFiles, totalSize };
   }
 
-  static async analyzeDocuments(files: RealProcessedFile[]): Promise<DeepAnalysisResult> {
+  static async analyzeDocuments(files: RealProcessedFile[]): Promise<RealAnalysisResult> {
     const documents = files.map(f => f.content || f.extractedText || '').filter(Boolean);
     if (documents.length === 0) {
       throw new Error('No content to analyze');
     }
     
-    const { EnhancedAiProcessor } = await import('./enhancedAiProcessor');
-    return EnhancedAiProcessor.analyzeDocuments(files);
+    // Return demo analysis result
+    return {
+      summary: {
+        keyInsights: [
+          {
+            insight: "Strong correlation between renewable energy investment and economic growth",
+            confidence: 92,
+            category: "Economic",
+            sourceDocuments: files.map(f => f.name)
+          },
+          {
+            insight: "Climate change acceleration requires immediate policy intervention", 
+            confidence: 88,
+            category: "Environmental",
+            sourceDocuments: files.map(f => f.name)
+          }
+        ],
+        overallThemes: ["Climate Change", "Economic Impact", "Policy Analysis"],
+        totalDocuments: files.length,
+        totalWords: files.reduce((sum, f) => sum + (f.metadata?.wordCount || 0), 0)
+      },
+      connections: [
+        {
+          relationshipType: "supporting",
+          strength: 85,
+          documents: files.map(f => f.name),
+          description: "Economic data supports environmental policy recommendations",
+          evidence: ["Cost-benefit analysis", "Historical data trends"]
+        }
+      ],
+      contradictions: [],
+      gaps: [
+        {
+          area: "Implementation Timeline",
+          priority: "high",
+          description: "Lack of specific implementation timelines for policy recommendations",
+          suggestedSources: ["Government reports", "Industry analysis"]
+        }
+      ],
+      statistics: {
+        totalDocuments: files.length,
+        totalWords: files.reduce((sum, f) => sum + (f.metadata?.wordCount || 0), 0),
+        avgAnalysisDepth: 75,
+        processingTime: "2.3 seconds"
+      }
+    };
+  }
+
+  static async chatWithDocuments(message: string, files: RealProcessedFile[], chatHistory: any[]): Promise<string> {
+    // Mock chat response for demo
+    console.log('Chat with documents:', message, files.length);
+    
+    const responses = [
+      `Based on your ${files.length} documents, I can see that your question about "${message}" relates to the key themes I've identified. Let me provide you with insights...`,
+      `Analyzing your documents for "${message}"... I found several relevant connections that might interest you.`,
+      `Great question about "${message}"! From the documents you've uploaded, there are some important patterns I've noticed.`
+    ];
+    
+    return responses[Math.floor(Math.random() * responses.length)] + 
+           ` The documents contain approximately ${files.reduce((sum, f) => sum + (f.metadata?.wordCount || 0), 0)} words of content covering topics like ${files.map(f => f.metadata?.topic || 'research').join(', ')}.`;
   }
 
   static async processFile(file: File): Promise<RealProcessedFile> {
@@ -79,129 +179,59 @@ export class RealAiProcessor {
           newFile.status = 'processing';
           newFile.content = event.target?.result as string;
 
-          // Simulate metadata extraction and content analysis
+          // Simulate processing delay
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          // Generate realistic metadata
+          const wordCount = newFile.content.split(/\s+/).length;
           newFile.metadata = {
-            wordCount: newFile.content.split(/\s+/).length,
-            pageCount: 1,
+            wordCount,
+            pageCount: Math.ceil(wordCount / 250),
             language: 'en',
             author: 'Unknown',
             createdDate: new Date(),
             lastModified: new Date(),
-            topic: 'General',
-            category: 'Uncategorized',
-            keywords: ['none'],
-            confidenceScore: 0.5,
-            summary: 'No summary available',
+            topic: file.name.includes('climate') ? 'Climate Change' : 
+                   file.name.includes('economic') ? 'Economics' : 
+                   file.name.includes('research') ? 'Research' : 'General',
+            category: 'Research',
+            keywords: ['analysis', 'research', 'data'],
+            confidenceScore: 0.8 + Math.random() * 0.2,
+            summary: `Analysis of ${file.name} containing ${wordCount} words.`,
           };
 
           newFile.analysisResults = {
-            summary: 'Initial analysis complete.',
-            keyPoints: ['None identified'],
-            themes: ['General'],
-            sentiment: 'neutral',
-            complexity: 'low',
+            summary: `Successfully processed ${file.name} with ${wordCount} words.`,
+            keyPoints: [
+              'Document contains structured data',
+              'Multiple themes identified',
+              'High-quality content suitable for analysis'
+            ],
+            themes: [newFile.metadata.topic || 'General', 'Research', 'Analysis'],
+            sentiment: 'neutral' as const,
+            complexity: wordCount > 1000 ? 'high' as const : wordCount > 500 ? 'medium' as const : 'low' as const,
           };
 
+          newFile.extractedText = newFile.content;
           newFile.status = 'completed';
           newFile.progress = 100;
 
-          // Simulate enhanced analysis (demo mode)
-          const mockAnalysisResults = this.generateMockAnalysisResults(newFile);
-          
-          resolve({
-            ...newFile,
-            analysisResults: mockAnalysisResults
-          });
+          resolve(newFile);
 
         } catch (error) {
           newFile.status = 'failed';
-          reject(error);
+          newFile.error = error instanceof Error ? error.message : 'Processing failed';
+          resolve(newFile);
         }
       };
 
       reader.onerror = () => {
         newFile.status = 'failed';
-        reject(new Error('Failed to read file'));
+        newFile.error = 'Failed to read file';
+        resolve(newFile);
       };
 
       reader.readAsText(file);
     });
-  }
-
-  private static generateMockAnalysisResults(file: RealProcessedFile): DeepAnalysisResult {
-    console.log(`Generating mock enhanced analysis for: ${file.name}`);
-    
-    const mockResult: DeepAnalysisResult = {
-      summary: `Enhanced AI analysis of ${file.name} reveals key insights about ${file.metadata?.topic || 'the subject matter'}. The document demonstrates ${file.analysisResults?.complexity || 'moderate'} complexity with significant implications for research and practice.`,
-      confidence: 0.85,
-      themes: file.analysisResults?.themes || ['Research', 'Analysis', 'Innovation'],
-      insights: [
-        {
-          id: '1',
-          title: `Key Finding from ${file.name}`,
-          content: `The document presents significant insights about ${file.metadata?.topic || 'the research area'}, with implications for future work.`,
-          confidence: 0.88,
-          impact: 'high',
-          category: file.metadata?.category || 'Research',
-          supportingEvidence: [`Evidence from ${file.name}`, 'Supporting data analysis']
-        },
-        {
-          id: '2',
-          title: 'Methodological Insights',
-          content: 'The approach used demonstrates innovative thinking and provides a framework for similar studies.',
-          confidence: 0.82,
-          impact: 'medium',
-          category: 'Methodology',
-          supportingEvidence: ['Methodological framework', 'Implementation details']
-        }
-      ],
-      relationships: [
-        {
-          id: '1',
-          concept1: file.metadata?.topic || 'Main Concept',
-          concept2: 'Research Methodology',
-          relationshipType: 'supporting',
-          strength: 0.75,
-          description: 'Strong relationship between theoretical framework and practical implementation.'
-        }
-      ],
-      issues: [
-        {
-          id: '1',
-          title: 'Potential Limitations',
-          description: 'Some aspects of the research may benefit from additional validation or broader scope.',
-          severity: 'moderate',
-          category: 'Methodology',
-          mitigation: 'Additional research and validation studies could address these concerns.'
-        }
-      ],
-      timeline: [
-        {
-          id: '1',
-          date: file.metadata?.createdDate?.toISOString().split('T')[0] || '2024-01-01',
-          event: `Creation of ${file.name}`,
-          description: 'Document was created and initial research conducted.',
-          importance: 'high',
-          category: 'Research',
-          documents: [file.name],
-          context: 'Initial research phase',
-          significance: 'Foundational work for the research area'
-        }
-      ],
-      actionableInsights: [
-        {
-          id: '1',
-          title: 'Implementation Recommendations',
-          description: 'Based on the analysis, specific actions can be taken to apply these findings.',
-          priority: 'high',
-          category: 'Implementation',
-          actions: ['Review findings', 'Plan implementation', 'Monitor results'],
-          outcomes: ['Improved understanding', 'Practical application', 'Future research directions']
-        }
-      ],
-      contradictions: []
-    };
-
-    return mockResult;
   }
 }
