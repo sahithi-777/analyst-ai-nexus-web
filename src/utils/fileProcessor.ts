@@ -14,6 +14,7 @@ export interface ProcessedFile {
   };
   status: 'processing' | 'completed' | 'error';
   error?: string;
+  uploadedAt?: Date;
 }
 
 export interface AnalysisResult {
