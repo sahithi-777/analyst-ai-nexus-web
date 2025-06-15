@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Brain, FileText, MessageSquare, Upload as UploadIcon, ChartBar, Lightbulb } from 'lucide-react';
+import { Brain, FileText, MessageSquare, Upload as UploadIcon, ChartBar, Lightbulb, Settings, User } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -36,7 +37,7 @@ const RealDashboard = () => {
         
         toast({
           title: "Demo Mode Active",
-          description: "Showing sample data. All AI features are simulated.",
+          description: "AI Research Hub ready with sample data",
         });
       };
       
@@ -105,12 +106,20 @@ const RealDashboard = () => {
           </a>
           <div className="flex items-center space-x-4">
             <nav className="space-x-4">
-              <a href="/dashboard" className="text-gray-400 hover:text-gray-300">
-                Dashboard
-              </a>
-              <a href="/" className="text-gray-400 hover:text-gray-300">
-                Home
-              </a>
+              <button 
+                onClick={() => navigate('/profile')}
+                className="flex items-center space-x-1 text-gray-400 hover:text-gray-300 transition-colors"
+              >
+                <User className="h-4 w-4" />
+                <span>Profile</span>
+              </button>
+              <button 
+                onClick={() => setActiveTab('upload')}
+                className="flex items-center space-x-1 text-gray-400 hover:text-gray-300 transition-colors"
+              >
+                <Settings className="h-4 w-4" />
+                <span>Settings</span>
+              </button>
             </nav>
             <UserProfileDropdown onNavigateToProfile={handleNavigateToProfile} />
           </div>

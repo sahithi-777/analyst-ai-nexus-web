@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { RealProcessedFile, RealAiProcessor } from '@/utils/realAiProcessor';
+import { RealProcessedFile } from '@/utils/realAiProcessor';
+import { executeChatQuestion } from '@/utils/chatHelpers';
 import ChatMessage from './ChatMessage';
 
 interface Message {
@@ -67,16 +68,9 @@ const RealChatInterface = ({ processedFiles, isEmbedded = false, initialQuestion
 
     try {
       const validFiles = processedFiles.filter(f => f.status === 'completed');
-      const chatHistory = messages.map(msg => ({
-        sender: msg.sender,
-        text: msg.text
-      }));
-
-      const aiResponse = await RealAiProcessor.chatWithDocuments(
-        text.trim(),
-        validFiles,
-        chatHistory
-      );
+      
+      // Use the enhanced chat helper function
+      const aiResponse = await executeChatQuestion(text.trim(), validFiles);
 
       const aiMessage: Message = {
         id: Date.now().toString() + '-ai',
@@ -88,8 +82,8 @@ const RealChatInterface = ({ processedFiles, isEmbedded = false, initialQuestion
       setMessages(prev => [...prev, aiMessage]);
 
       toast({
-        title: "Claude Response",
-        description: "AI analysis complete",
+        title: "AI Response Ready",
+        description: "Analysis complete",
       });
 
     } catch (error) {
@@ -126,7 +120,7 @@ const RealChatInterface = ({ processedFiles, isEmbedded = false, initialQuestion
         <CardTitle className="text-white flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Brain className="h-5 w-5 text-cyan-400" />
-            <span className="text-sm">Claude AI Assistant</span>
+            <span className="text-sm">Claude AI Research Assistant</span>
           </div>
           <div className="text-xs text-gray-400">
             {hasDocuments ? `${processedFiles.filter(f => f.status === 'completed').length} docs loaded` : 'No documents'}
@@ -140,7 +134,7 @@ const RealChatInterface = ({ processedFiles, isEmbedded = false, initialQuestion
             {messages.length === 0 && !hasDocuments && (
               <div className="text-center py-8">
                 <Brain className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-400 text-sm">Upload documents to start chatting with Claude</p>
+                <p className="text-gray-400 text-sm">Upload documents to start chatting with Claude AI</p>
               </div>
             )}
 
@@ -152,7 +146,7 @@ const RealChatInterface = ({ processedFiles, isEmbedded = false, initialQuestion
                 <div className="mt-4 space-y-2">
                   <p className="text-xs text-gray-500">Try asking:</p>
                   <div className="flex flex-wrap gap-2 justify-center">
-                    {['Summarize key points', 'Find contradictions', 'What are the main themes?'].map((suggestion, idx) => (
+                    {['Summarize key points', 'Find contradictions', 'What are the main themes?', 'Give me insights'].map((suggestion, idx) => (
                       <Button
                         key={idx}
                         variant="outline"
@@ -182,7 +176,7 @@ const RealChatInterface = ({ processedFiles, isEmbedded = false, initialQuestion
             {isTyping && (
               <div className="flex items-center space-x-2 text-gray-400">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Claude is thinking...</span>
+                <span className="text-sm">Claude is analyzing your documents...</span>
               </div>
             )}
           </div>
