@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Brain, FileText, MessageSquare, Upload as UploadIcon, ChartBar, Lightbulb } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -6,16 +5,15 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import RealUploadArea from '@/components/upload/RealUploadArea';
-import EnhancedAnalysisInterface from '@/components/analysis/EnhancedAnalysisInterface';
+import RealAnalysisInterface from '@/components/analysis/RealAnalysisInterface';
 import RealChatInterface from '@/components/chat/RealChatInterface';
-import { RealProcessedFile } from '@/utils/realAiProcessor';
-import { DeepAnalysisResult } from '@/utils/enhancedAiProcessor';
+import { RealProcessedFile, RealAnalysisResult } from '@/utils/realAiProcessor';
 import IntelligentQuestionGenerator from '@/components/research/IntelligentQuestionGenerator';
 import UserProfileDropdown from '@/components/profile/UserProfileDropdown';
 
 const RealDashboard = () => {
   const [processedFiles, setProcessedFiles] = useState<RealProcessedFile[]>([]);
-  const [analysisResults, setAnalysisResults] = useState<DeepAnalysisResult | null>(null);
+  const [analysisResults, setAnalysisResults] = useState<RealAnalysisResult | null>(null);
   const [activeTab, setActiveTab] = useState<"upload" | "analysis" | "chat" | "questions">("upload");
   const [generatedQuestions, setGeneratedQuestions] = useState<any[]>([]);
   const [initialChatQuestion, setInitialChatQuestion] = useState<string>('');
@@ -56,11 +54,11 @@ const RealDashboard = () => {
     }
   };
 
-  const handleAnalysisComplete = (results: DeepAnalysisResult) => {
+  const handleAnalysisComplete = (results: RealAnalysisResult) => {
     setAnalysisResults(results);
     toast({
       title: "Enhanced Analysis Complete",
-      description: `Generated ${results.insights.length} insights with deep content analysis`,
+      description: `Generated ${results.summary.keyInsights.length} insights with deep content analysis`,
     });
   };
 
@@ -93,8 +91,8 @@ const RealDashboard = () => {
   // Calculate statistics from actual data
   const totalWords = processedFiles.reduce((sum, file) => sum + (file.metadata?.wordCount || 0), 0);
   const completedFiles = processedFiles.filter(f => f.status === 'completed').length;
-  const totalInsights = analysisResults?.insights.length || 0;
-  const totalConnections = analysisResults?.relationships.length || 0;
+  const totalInsights = analysisResults?.summary?.keyInsights?.length || 0;
+  const totalConnections = analysisResults?.connections?.length || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -197,7 +195,7 @@ const RealDashboard = () => {
               </TabsContent>
 
               <TabsContent value="analysis" className="mt-6">
-                <EnhancedAnalysisInterface
+                <RealAnalysisInterface
                   processedFiles={processedFiles}
                   onAnalysisComplete={handleAnalysisComplete}
                 />
@@ -264,19 +262,19 @@ const RealDashboard = () => {
                 <div className="space-y-3">
                   <div className="text-sm">
                     <span className="text-gray-400">Deep Insights:</span>
-                    <span className="text-white ml-2">{analysisResults.insights.length}</span>
+                    <span className="text-white ml-2">{analysisResults.summary.keyInsights.length}</span>
                   </div>
                   <div className="text-sm">
                     <span className="text-gray-400">Relationships:</span>
-                    <span className="text-white ml-2">{analysisResults.relationships.length}</span>
+                    <span className="text-white ml-2">{analysisResults.connections.length}</span>
                   </div>
                   <div className="text-sm">
-                    <span className="text-gray-400">Issues Found:</span>
-                    <span className="text-white ml-2">{analysisResults.issues.length}</span>
+                    <span className="text-gray-400">Research Gaps:</span>
+                    <span className="text-white ml-2">{analysisResults.gaps.length}</span>
                   </div>
                   <div className="text-sm">
-                    <span className="text-gray-400">Action Items:</span>
-                    <span className="text-white ml-2">{analysisResults.actionableInsights.length}</span>
+                    <span className="text-gray-400">Processing Time:</span>
+                    <span className="text-white ml-2">{analysisResults.statistics.processingTime}</span>
                   </div>
                   {analysisResults.contradictions.length > 0 && (
                     <div className="text-sm">
