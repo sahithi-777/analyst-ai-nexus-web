@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Brain, Mail, Lock, User, Globe } from 'lucide-react';
+import { Brain, Mail, Lock, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Auth = () => {
@@ -32,7 +32,7 @@ const Auth = () => {
         if (error) {
           setError(error.message);
         } else {
-          navigate('/');
+          navigate('/dashboard');
         }
       } else {
         const { error } = await signUp(email, password, fullName);
@@ -51,7 +51,7 @@ const Auth = () => {
 
   const handleDemoMode = () => {
     setDemoMode(true);
-    navigate('/');
+    navigate('/dashboard');
   };
 
   return (
@@ -146,24 +146,6 @@ const Auth = () => {
                 {loading ? 'Loading...' : (isLogin ? 'Sign In' : 'Sign Up')}
               </Button>
             </form>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-600" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-gray-800 px-2 text-gray-400">Or continue with</span>
-              </div>
-            </div>
-
-            <Button
-              variant="outline"
-              className="w-full border-gray-600 bg-gray-700/50 text-white hover:bg-gray-600"
-              disabled
-            >
-              <Globe className="mr-2 h-4 w-4" />
-              Sign in with Google (Coming Soon)
-            </Button>
 
             <Button
               variant="ghost"
