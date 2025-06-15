@@ -1,3 +1,4 @@
+
 export interface Insight {
   id: string;
   title: string;
@@ -129,5 +130,11 @@ export class EnhancedAiProcessor {
         resolve(mockAnalysisResult);
       }, 1500); // Simulate a delay for processing
     });
+  }
+
+  static async analyzeDocuments(files: any[]): Promise<DeepAnalysisResult> {
+    // This method analyzes processed files and returns deep analysis
+    const documents = files.map(f => f.content || f.extractedText || '').filter(Boolean);
+    return this.analyzeContent(documents);
   }
 }

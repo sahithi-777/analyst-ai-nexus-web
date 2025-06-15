@@ -1,288 +1,207 @@
-import { supabase } from '@/integrations/supabase/client';
+import { DeepAnalysisResult } from './enhancedAiProcessor';
 
 export interface RealProcessedFile {
   id: string;
   name: string;
-  type: string;
   size: number;
+  type: string;
   content: string;
-  extractedText: string;
-  status: 'completed' | 'processing' | 'error';
-  metadata: {
-    wordCount: number;
-    pageCount: number;
-    language: string;
+  status: 'uploading' | 'processing' | 'completed' | 'failed';
+  progress?: number;
+  metadata?: {
+    wordCount?: number;
+    pageCount?: number;
+    language?: string;
     author?: string;
-    createdDate: Date;
-    lastModified: Date;
-    topic: string;
-    category: string;
-    keywords: string[];
-    confidenceScore: number;
+    createdDate?: Date;
+    lastModified?: Date;
+    topic?: string;
+    category?: string;
+    keywords?: string[];
+    confidenceScore?: number;
     summary?: string;
   };
-  uploadedAt: Date;
-  error?: string;
-  preview: string;
-}
-
-export interface RealAnalysisResult {
-  summary: {
-    totalDocuments: number;
-    totalWords: number;
-    avgConfidenceScore: number;
-    primaryTopics: string[];
-    documentTypes: { [key: string]: number };
-    keyInsights: Array<{
-      insight: string;
-      confidence: number;
-      sourceDocuments: string[];
-      category: 'trend' | 'finding' | 'recommendation' | 'risk';
-    }>;
+  analysisResults?: {
+    summary: string;
+    keyPoints: string[];
+    themes: string[];
+    sentiment: 'positive' | 'negative' | 'neutral';
+    complexity: 'high' | 'medium' | 'low';
   };
-  connections: Array<{
-    documents: string[];
-    relationshipType: 'complementary' | 'contradictory' | 'sequential' | 'supporting';
-    strength: number;
-    description: string;
-    evidence: string[];
-  }>;
-  timeline: Array<{
-    date: string;
-    event: string;
-    documents: string[];
-    importance: 'high' | 'medium' | 'low';
-    category: string;
-  }>;
-  contradictions: Array<{
-    documents: string[];
-    issue: string;
-    severity: 'critical' | 'moderate' | 'minor';
-    description: string;
-    recommendation: string;
-  }>;
-  gaps: Array<{
-    area: string;
-    description: string;
-    priority: 'high' | 'medium' | 'low';
-    suggestedSources: string[];
-  }>;
-  statistics: {
-    totalDocuments: number;
-    totalWords: number;
-    avgAnalysisDepth: number;
-    processingTime: string;
-    lastAnalyzed: Date;
-  };
+  extractedText?: string;
 }
 
 export class RealAiProcessor {
-  static async processFile(file: File, useDemoData = false): Promise<RealProcessedFile> {
-    console.log(`Processing file: ${file.name}`);
-    
-    // For demo mode, return demo data
-    if (useDemoData) {
-      const { getDemoFiles } = await import('@/utils/demoData');
-      const demoFiles = getDemoFiles();
-      return demoFiles[0]; // Return first demo file as template
-    }
-    
-    try {
-      // Read file content
-      const content = await this.readFileContent(file);
-      
-      // Try to extract text and metadata using Claude
-      const { data, error } = await supabase.functions.invoke('extract-document-text', {
-        body: {
-          fileName: file.name,
-          fileType: file.type,
-          fileContent: content
-        }
-      });
-
-      if (error) {
-        console.error('Error extracting document text:', error);
-        throw error;
-      }
-
-      const { extractedText, metadata } = data;
-
-      return {
-        id: `file-${Date.now()}-${Math.random()}`,
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        content,
-        extractedText,
-        status: 'completed',
-        metadata: {
-          ...metadata,
-          createdDate: new Date(file.lastModified || Date.now()),
-          lastModified: new Date(file.lastModified || Date.now()),
-        },
-        uploadedAt: new Date(),
-        preview: extractedText.substring(0, 300) + '...'
-      };
-
-    } catch (error) {
-      console.error('Error processing file:', error);
-      return {
-        id: `file-${Date.now()}-${Math.random()}`,
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        content: '',
-        extractedText: '',
-        status: 'error',
-        metadata: {
-          wordCount: 0,
-          pageCount: 0,
-          language: 'en',
-          createdDate: new Date(),
-          lastModified: new Date(),
-          topic: 'Error',
-          category: 'Miscellaneous',
-          keywords: [],
-          confidenceScore: 0,
-        },
-        uploadedAt: new Date(),
-        error: error.message || 'Failed to process file',
-        preview: 'Error processing file'
-      };
-    }
+  static generateStats(files: RealProcessedFile[]): { totalFiles: number; totalSize: number } {
+    const totalFiles = files.length;
+    const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+    return { totalFiles, totalSize };
   }
 
-  private static async readFileContent(file: File): Promise<string> {
+  static async analyzeDocuments(files: RealProcessedFile[]): Promise<DeepAnalysisResult> {
+    const documents = files.map(f => f.content || f.extractedText || '').filter(Boolean);
+    if (documents.length === 0) {
+      throw new Error('No content to analyze');
+    }
+    
+    const { EnhancedAiProcessor } = await import('./enhancedAiProcessor');
+    return EnhancedAiProcessor.analyzeDocuments(files);
+  }
+
+  static async processFile(file: File): Promise<RealProcessedFile> {
+    const id = Math.random().toString(36).substring(2, 15);
+    const newFile: RealProcessedFile = {
+      id,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      content: '',
+      status: 'uploading',
+      progress: 0,
+    };
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        const content = event.target?.result as string;
-        resolve(content || '');
+
+      reader.onloadstart = () => {
+        newFile.status = 'uploading';
+        newFile.progress = 0;
       };
-      reader.onerror = () => reject(new Error('Failed to read file'));
+
+      reader.onprogress = (event) => {
+        if (event.lengthComputable) {
+          newFile.progress = (event.loaded / event.total) * 100;
+        }
+      };
+
+      reader.onload = async (event) => {
+        try {
+          newFile.status = 'processing';
+          newFile.content = event.target?.result as string;
+
+          // Simulate metadata extraction and content analysis
+          newFile.metadata = {
+            wordCount: newFile.content.split(/\s+/).length,
+            pageCount: 1,
+            language: 'en',
+            author: 'Unknown',
+            createdDate: new Date(),
+            lastModified: new Date(),
+            topic: 'General',
+            category: 'Uncategorized',
+            keywords: ['none'],
+            confidenceScore: 0.5,
+            summary: 'No summary available',
+          };
+
+          newFile.analysisResults = {
+            summary: 'Initial analysis complete.',
+            keyPoints: ['None identified'],
+            themes: ['General'],
+            sentiment: 'neutral',
+            complexity: 'low',
+          };
+
+          newFile.status = 'completed';
+          newFile.progress = 100;
+
+          // Simulate enhanced analysis (demo mode)
+          const mockAnalysisResults = this.generateMockAnalysisResults(newFile);
+          
+          resolve({
+            ...newFile,
+            analysisResults: mockAnalysisResults
+          });
+
+        } catch (error) {
+          newFile.status = 'failed';
+          reject(error);
+        }
+      };
+
+      reader.onerror = () => {
+        newFile.status = 'failed';
+        reject(new Error('Failed to read file'));
+      };
+
       reader.readAsText(file);
     });
   }
 
-  static async analyzeDocuments(files: RealProcessedFile[], useDemoData = false): Promise<RealAnalysisResult> {
-    console.log(`Analyzing ${files.length} documents with Claude`);
+  private static generateMockAnalysisResults(file: RealProcessedFile): DeepAnalysisResult {
+    console.log(`Generating mock enhanced analysis for: ${file.name}`);
     
-    // For demo mode or when API fails, return demo data
-    if (useDemoData || files.length === 0) {
-      const { getDemoAnalysis } = await import('@/utils/demoData');
-      const demoAnalysis = getDemoAnalysis();
-      
-      // Convert to RealAnalysisResult format
-      return {
-        summary: {
-          totalDocuments: demoAnalysis.statistics.totalDocuments,
-          totalWords: demoAnalysis.statistics.totalWords,
-          avgConfidenceScore: demoAnalysis.statistics.avgConfidenceScore,
-          primaryTopics: Object.keys(demoAnalysis.statistics.keywordDensity),
-          documentTypes: demoAnalysis.statistics.documentTypes,
-          keyInsights: demoAnalysis.insights.map(insight => ({
-            insight: insight.title,
-            confidence: insight.confidence,
-            sourceDocuments: insight.sourceDocuments,
-            category: insight.category as 'trend' | 'finding' | 'recommendation' | 'risk'
-          }))
+    const mockResult: DeepAnalysisResult = {
+      summary: `Enhanced AI analysis of ${file.name} reveals key insights about ${file.metadata?.topic || 'the subject matter'}. The document demonstrates ${file.analysisResults?.complexity || 'moderate'} complexity with significant implications for research and practice.`,
+      confidence: 0.85,
+      themes: file.analysisResults?.themes || ['Research', 'Analysis', 'Innovation'],
+      insights: [
+        {
+          id: '1',
+          title: `Key Finding from ${file.name}`,
+          content: `The document presents significant insights about ${file.metadata?.topic || 'the research area'}, with implications for future work.`,
+          confidence: 0.88,
+          impact: 'high',
+          category: file.metadata?.category || 'Research',
+          supportingEvidence: [`Evidence from ${file.name}`, 'Supporting data analysis']
         },
-        connections: demoAnalysis.relationships.map(rel => ({
-          documents: [rel.sourceDocument, rel.targetDocument],
-          relationshipType: rel.relationshipType as 'complementary' | 'contradictory' | 'sequential' | 'supporting',
-          strength: rel.strength,
-          description: rel.description,
-          evidence: rel.evidence
-        })),
-        timeline: demoAnalysis.timeline.map(event => ({
-          date: event.date,
-          event: event.event,
-          documents: event.documents,
-          importance: event.importance as 'high' | 'medium' | 'low',
-          category: event.category
-        })),
-        contradictions: demoAnalysis.contradictions.map(contra => ({
-          documents: contra.documents,
-          issue: contra.issue,
-          severity: contra.severity as 'critical' | 'moderate' | 'minor',
-          description: contra.description,
-          recommendation: contra.recommendation
-        })),
-        gaps: demoAnalysis.issues.map(issue => ({
-          area: issue.title,
-          description: issue.description,
-          priority: issue.severity === 'high' ? 'high' as const : 
-                   issue.severity === 'moderate' ? 'medium' as const : 'low' as const,
-          suggestedSources: issue.recommendations
-        })),
-        statistics: {
-          totalDocuments: demoAnalysis.statistics.totalDocuments,
-          totalWords: demoAnalysis.statistics.totalWords,
-          avgAnalysisDepth: demoAnalysis.statistics.avgConfidenceScore,
-          processingTime: demoAnalysis.statistics.processingTime,
-          lastAnalyzed: demoAnalysis.statistics.lastAnalyzed
+        {
+          id: '2',
+          title: 'Methodological Insights',
+          content: 'The approach used demonstrates innovative thinking and provides a framework for similar studies.',
+          confidence: 0.82,
+          impact: 'medium',
+          category: 'Methodology',
+          supportingEvidence: ['Methodological framework', 'Implementation details']
         }
-      };
-    }
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('analyze-documents', {
-        body: { files }
-      });
-
-      if (error) {
-        console.error('Error analyzing documents:', error);
-        throw error;
-      }
-
-      return data as RealAnalysisResult;
-
-    } catch (error) {
-      console.error('Error in document analysis:', error);
-      throw new Error('Failed to analyze documents with AI');
-    }
-  }
-
-  static async chatWithDocuments(
-    message: string, 
-    documents: RealProcessedFile[], 
-    chatHistory: Array<{sender: string, text: string}>,
-    useDemoData = false
-  ): Promise<string> {
-    console.log('Sending message to Claude for document-aware chat');
-    
-    // For demo mode, provide demo responses
-    if (useDemoData || documents.length === 0) {
-      const demoResponses = [
-        "Based on the AI research methods document, I can see that 78% of researchers now use AI assistants for initial analysis, leading to a 35% reduction in research time. This aligns with the business intelligence framework's promise of 40% improvement in decision-making speed.",
-        "The climate data analysis reveals concerning trends: global temperature has increased by 1.2°C since 1990, with polar regions experiencing twice the global average warming. This accelerated warming suggests we're approaching critical tipping points faster than previously predicted.",
-        "Comparing the documents, there's a clear synergy between AI research methodologies and business intelligence applications. Both emphasize the importance of quality data, automated analysis, and human-AI collaboration for optimal results.",
-        "The business intelligence framework addresses many of the data quality issues identified in climate research. Its proposed layered architecture with real-time processing and anomaly detection could significantly enhance environmental monitoring capabilities."
-      ];
-      
-      const randomResponse = demoResponses[Math.floor(Math.random() * demoResponses.length)];
-      return `${randomResponse}\n\n*This is a demo response. In the full version, Claude AI would provide detailed analysis based on your specific documents.*`;
-    }
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('chat-with-documents', {
-        body: {
-          message,
-          documents,
-          chatHistory
+      ],
+      relationships: [
+        {
+          id: '1',
+          concept1: file.metadata?.topic || 'Main Concept',
+          concept2: 'Research Methodology',
+          relationshipType: 'supporting',
+          strength: 0.75,
+          description: 'Strong relationship between theoretical framework and practical implementation.'
         }
-      });
+      ],
+      issues: [
+        {
+          id: '1',
+          title: 'Potential Limitations',
+          description: 'Some aspects of the research may benefit from additional validation or broader scope.',
+          severity: 'moderate',
+          category: 'Methodology',
+          mitigation: 'Additional research and validation studies could address these concerns.'
+        }
+      ],
+      timeline: [
+        {
+          id: '1',
+          date: file.metadata?.createdDate?.toISOString().split('T')[0] || '2024-01-01',
+          event: `Creation of ${file.name}`,
+          description: 'Document was created and initial research conducted.',
+          importance: 'high',
+          category: 'Research',
+          documents: [file.name],
+          context: 'Initial research phase',
+          significance: 'Foundational work for the research area'
+        }
+      ],
+      actionableInsights: [
+        {
+          id: '1',
+          title: 'Implementation Recommendations',
+          description: 'Based on the analysis, specific actions can be taken to apply these findings.',
+          priority: 'high',
+          category: 'Implementation',
+          actions: ['Review findings', 'Plan implementation', 'Monitor results'],
+          outcomes: ['Improved understanding', 'Practical application', 'Future research directions']
+        }
+      ],
+      contradictions: []
+    };
 
-      if (error) {
-        console.error('Error in chat:', error);
-        throw error;
-      }
-
-      return data.response || data.fallbackResponse || 'Sorry, I could not process your request.';
-
-    } catch (error) {
-      console.error('Error in chat with documents:', error);
-      return 'I apologize, but I\'m having trouble processing your request right now. Please try again.';
-    }
+    return mockResult;
   }
 }

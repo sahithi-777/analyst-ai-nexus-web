@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Lightbulb, Play, RefreshCw, Loader2, Download, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { executeChatQuestion } from '@/utils/chatHelpers';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ResearchQuestion {
+  id: string;
   question: string;
   type: 'analytical' | 'comparative' | 'exploratory';
   difficulty: 'beginner' | 'intermediate' | 'advanced';
@@ -38,7 +40,7 @@ const IntelligentQuestionGenerator = ({
   const { toast } = useToast();
   const { demoMode } = useAuth();
 
-  const hasValidFiles = processedFiles.filter(f => f.status === 'completed').length > 0;
+  const hasValidFiles = processedFiles?.filter(f => f.status === 'completed').length > 0;
 
   // Load demo questions in demo mode
   useEffect(() => {
@@ -67,7 +69,7 @@ const IntelligentQuestionGenerator = ({
     setIsGenerating(true);
     
     try {
-      const validFiles = processedFiles.filter(f => f.status === 'completed');
+      const validFiles = processedFiles?.filter(f => f.status === 'completed') || [];
       
       // In demo mode, return demo questions
       if (demoMode) {
@@ -106,7 +108,7 @@ const IntelligentQuestionGenerator = ({
         return;
       }
 
-      const generatedQuestions = data.questions || [];
+      const generatedQuestions = data?.questions || [];
       setQuestions(generatedQuestions);
       onQuestionsGenerated?.(generatedQuestions);
 
@@ -138,7 +140,7 @@ const IntelligentQuestionGenerator = ({
     
     // Also get immediate response and show it
     try {
-      const response = await executeChatQuestion(question, processedFiles);
+      const response = await executeChatQuestion(question, processedFiles || []);
       toast({
         title: "Claude Response Ready",
         description: "Check the chat interface for the analysis",
@@ -155,7 +157,7 @@ const IntelligentQuestionGenerator = ({
     const exportData = {
       timestamp: new Date().toISOString(),
       totalQuestions: questions.length,
-      sourceDocuments: processedFiles.map(f => f.name),
+      sourceDocuments: processedFiles?.map(f => f.name) || [],
       questions: questions.map(q => ({
         question: q.question,
         type: q.type,
@@ -163,7 +165,7 @@ const IntelligentQuestionGenerator = ({
         category: q.category,
         rationale: q.rationale,
         estimatedTime: q.estimatedTime,
-        sourceDocuments: q.sourceDocuments
+        sourceDocuments: q.sourceDocuments || []
       }))
     };
     
@@ -329,7 +331,7 @@ const IntelligentQuestionGenerator = ({
 
                   <p className="text-gray-400 text-xs mb-2">{question.rationale}</p>
                   
-                  {question.sourceDocuments.length > 0 && (
+                  {question.sourceDocuments && question.sourceDocuments.length > 0 && (
                     <div className="text-xs text-gray-500">
                       Sources: {question.sourceDocuments.join(', ')}
                     </div>

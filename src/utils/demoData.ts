@@ -14,7 +14,14 @@ export const getDemoFiles = (): RealProcessedFile[] => [
       wordCount: 5420,
       pageCount: 15,
       language: 'en',
+      author: 'Dr. Climate Research',
+      createdDate: new Date('2024-01-10'),
       lastModified: new Date('2024-01-15'),
+      topic: 'Climate Change',
+      category: 'Research',
+      keywords: ['climate', 'environment', 'ecosystem'],
+      confidenceScore: 0.95,
+      summary: 'Comprehensive climate change impact study'
     },
     analysisResults: {
       summary: 'A detailed analysis of climate change effects on biodiversity and ecosystem resilience.',
@@ -39,7 +46,14 @@ export const getDemoFiles = (): RealProcessedFile[] => [
       wordCount: 3200,
       pageCount: 8,
       language: 'en',
+      author: 'Economic Research Team',
+      createdDate: new Date('2024-01-05'),
       lastModified: new Date('2024-01-10'),
+      topic: 'Economic Analysis',
+      category: 'Business',
+      keywords: ['economics', 'renewable energy', 'transition'],
+      confidenceScore: 0.88,
+      summary: 'Economic feasibility study of renewable energy'
     },
     analysisResults: {
       summary: 'Economic feasibility study of transitioning to renewable energy sources.',
@@ -193,25 +207,34 @@ export const getDemoQuestions = () => [
   {
     id: '1',
     question: 'What are the main economic barriers to renewable energy adoption?',
-    category: 'Economic Analysis',
-    complexity: 'medium',
-    relevantSections: ['Economic Impact Analysis', 'Policy Framework'],
-    suggestedApproach: 'Compare cost structures and analyze financial incentives'
+    type: 'analytical' as const,
+    difficulty: 'intermediate' as const,
+    category: 'methodology' as const,
+    rationale: 'Understanding economic barriers is crucial for developing effective policies and strategies to accelerate renewable energy adoption.',
+    estimatedTime: '5-7 minutes',
+    sourceDocuments: ['Economic_Impact_Analysis.docx'],
+    templates: ['Compare cost structures and analyze financial incentives']
   },
   {
     id: '2',
     question: 'How do climate change impacts vary across different ecosystems?',
-    category: 'Environmental Science',
-    complexity: 'high',
-    relevantSections: ['Climate Research Data', 'Biodiversity Studies'],
-    suggestedApproach: 'Analyze ecosystem-specific vulnerability assessments'
+    type: 'comparative' as const,
+    difficulty: 'advanced' as const,
+    category: 'theory' as const,
+    rationale: 'Comparative analysis of ecosystem vulnerability helps prioritize conservation efforts and resource allocation.',
+    estimatedTime: '8-10 minutes',
+    sourceDocuments: ['Research_Paper_Climate_Change.pdf'],
+    templates: ['Analyze ecosystem-specific vulnerability assessments']
   },
   {
     id: '3',
     question: 'What policy mechanisms have proven most effective for driving clean energy transitions?',
-    category: 'Policy Analysis',
-    complexity: 'high',
-    relevantSections: ['Policy Framework', 'Implementation Studies'],
-    suggestedApproach: 'Comparative analysis of successful policy implementations'
+    type: 'exploratory' as const,
+    difficulty: 'advanced' as const,
+    category: 'application' as const,
+    rationale: 'Identifying effective policy mechanisms helps inform future policy development and implementation strategies.',
+    estimatedTime: '7-9 minutes',
+    sourceDocuments: ['Economic_Impact_Analysis.docx', 'Research_Paper_Climate_Change.pdf'],
+    templates: ['Comparative analysis of successful policy implementations']
   }
 ];
