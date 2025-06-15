@@ -1,7 +1,6 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,8 +8,6 @@ const corsHeaders = {
 };
 
 const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -30,7 +27,9 @@ serve(async (req) => {
     const documentContext = files.map(file => `
 Document: ${file.name}
 Content: ${file.extractedText}
-Metadata: ${JSON.stringify(file.metadata, null, 2)}
+Word Count: ${file.metadata?.wordCount || 0}
+Topic: ${file.metadata?.topic || 'Unknown'}
+Category: ${file.metadata?.category || 'Unknown'}
 ---
     `).join('\n');
 
@@ -46,57 +45,57 @@ Please provide your analysis in this exact JSON structure:
     "totalDocuments": ${files.length},
     "totalWords": <calculated_total>,
     "avgConfidenceScore": <calculated_avg>,
-    "primaryTopics": ["topic1", "topic2", ...],
-    "documentTypes": {"type1": count, "type2": count},
+    "primaryTopics": ["topic1", "topic2", "topic3"],
+    "documentTypes": {"Research": 1, "Business": 1},
     "keyInsights": [
       {
-        "insight": "detailed insight text",
+        "insight": "detailed insight based on actual content",
         "confidence": 85,
         "sourceDocuments": ["doc1.pdf"],
-        "category": "trend|finding|recommendation|risk"
+        "category": "trend"
       }
     ]
   },
   "connections": [
     {
       "documents": ["doc1.pdf", "doc2.pdf"],
-      "relationshipType": "complementary|contradictory|sequential|supporting",
+      "relationshipType": "complementary",
       "strength": 85,
-      "description": "detailed description",
+      "description": "detailed description of connection",
       "evidence": ["evidence1", "evidence2"]
     }
   ],
   "timeline": [
     {
       "date": "2024-01-15",
-      "event": "event description",
+      "event": "event description from documents",
       "documents": ["doc1.pdf"],
-      "importance": "high|medium|low",
-      "category": "category name"
+      "importance": "high",
+      "category": "milestone"
     }
   ],
   "contradictions": [
     {
       "documents": ["doc1.pdf", "doc2.pdf"],
       "issue": "contradiction description",
-      "severity": "critical|moderate|minor",
+      "severity": "moderate",
       "description": "detailed explanation",
       "recommendation": "suggested resolution"
     }
   ],
   "gaps": [
     {
-      "area": "missing area",
-      "description": "what's missing",
-      "priority": "high|medium|low",
+      "area": "missing research area",
+      "description": "what's missing based on document analysis",
+      "priority": "high",
       "suggestedSources": ["suggestion1", "suggestion2"]
     }
   ],
   "statistics": {
     "totalDocuments": ${files.length},
     "totalWords": <calculated_total>,
-    "avgAnalysisDepth": <percentage>,
-    "processingTime": "Xs",
+    "avgAnalysisDepth": 85,
+    "processingTime": "5s",
     "lastAnalyzed": "${new Date().toISOString()}"
   }
 }
@@ -104,7 +103,7 @@ Please provide your analysis in this exact JSON structure:
 Focus on:
 1. Real insights based on actual document content
 2. Identifying genuine patterns and relationships
-3. Finding actual contradictions or gaps
+3. Finding actual contradictions or gaps in the research
 4. Providing actionable recommendations
 5. Creating realistic timelines from document dates/content
 `;

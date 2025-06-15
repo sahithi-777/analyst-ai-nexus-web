@@ -23,9 +23,6 @@ serve(async (req) => {
 
     console.log(`Extracting text and metadata from ${fileName}`);
 
-    // For now, we'll enhance the text content analysis using Claude
-    // In a full implementation, you'd add PDF/DOCX parsing libraries
-    
     const analysisPrompt = `
 You are a document analysis expert. Analyze this document and extract key information:
 
@@ -35,13 +32,13 @@ Content: ${fileContent}
 
 Please provide your analysis in this exact JSON format:
 {
-  "extractedText": "cleaned and formatted text content",
+  "extractedText": "cleaned and formatted text content here",
   "metadata": {
     "wordCount": <actual_word_count>,
     "pageCount": <estimated_pages>,
     "language": "detected_language",
     "author": "extracted_or_inferred_author",
-    "topic": "main_topic",
+    "topic": "main_topic_from_content",
     "category": "document_category",
     "keywords": ["keyword1", "keyword2", "keyword3"],
     "confidenceScore": <analysis_confidence_0_to_100>,
@@ -54,6 +51,7 @@ For the category, choose from: "Business Intelligence", "Finance", "Technology",
 For the topic, provide a specific, descriptive topic based on the actual content.
 For keywords, extract the most relevant terms from the content.
 Confidence score should reflect how well you could analyze the document (higher for clear, well-structured content).
+The summary should be 2-3 sentences capturing the main points.
 `;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
