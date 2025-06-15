@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Brain, FileText, MessageSquare, Upload as UploadIcon, ChartBar, Lightbulb } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -7,6 +8,7 @@ import RealAnalysisInterface from '@/components/analysis/RealAnalysisInterface';
 import RealChatInterface from '@/components/chat/RealChatInterface';
 import { RealProcessedFile, RealAnalysisResult } from '@/utils/realAiProcessor';
 import IntelligentQuestionGenerator from '@/components/research/IntelligentQuestionGenerator';
+import UserProfileDropdown from '@/components/profile/UserProfileDropdown';
 
 const RealDashboard = () => {
   const [processedFiles, setProcessedFiles] = useState<RealProcessedFile[]>([]);
@@ -42,6 +44,10 @@ const RealDashboard = () => {
     }
   };
 
+  const handleNavigateToProfile = () => {
+    window.location.href = '/profile';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <header className="bg-gray-900 border-b border-gray-800 py-4">
@@ -50,17 +56,20 @@ const RealDashboard = () => {
             <Brain className="h-6 w-6 mr-2 text-cyan-400" />
             Real AI Analysis
           </a>
-          <nav className="space-x-4">
-            <a href="/" className="text-gray-400 hover:text-gray-300">
-              Dashboard
-            </a>
-            <a href="/about" className="text-gray-400 hover:text-gray-300">
-              About
-            </a>
-            <a href="/contact" className="text-gray-400 hover:text-gray-300">
-              Contact
-            </a>
-          </nav>
+          <div className="flex items-center space-x-4">
+            <nav className="space-x-4">
+              <a href="/" className="text-gray-400 hover:text-gray-300">
+                Dashboard
+              </a>
+              <a href="/about" className="text-gray-400 hover:text-gray-300">
+                About
+              </a>
+              <a href="/contact" className="text-gray-400 hover:text-gray-300">
+                Contact
+              </a>
+            </nav>
+            <UserProfileDropdown onNavigateToProfile={handleNavigateToProfile} />
+          </div>
         </div>
       </header>
 
