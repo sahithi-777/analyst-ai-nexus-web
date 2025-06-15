@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Brain, FileText, MessageSquare, Upload as UploadIcon, ChartBar, Lightbulb } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import RealUploadArea from '@/components/upload/RealUploadArea';
 import EnhancedAnalysisInterface from '@/components/analysis/EnhancedAnalysisInterface';
 import RealChatInterface from '@/components/chat/RealChatInterface';
