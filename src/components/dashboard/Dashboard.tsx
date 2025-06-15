@@ -24,6 +24,10 @@ const Dashboard = () => {
     setAnalysisResults(results);
   };
 
+  const handleGetStarted = () => {
+    setActiveSection('documents');
+  };
+
   const stats = [
     {
       title: 'Documents Processed',
@@ -272,9 +276,11 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      {showGuide && (
-        <WelcomeGuide onComplete={() => setShowGuide(false)} />
-      )}
+      <WelcomeGuide 
+        isOpen={showGuide}
+        onClose={() => setShowGuide(false)}
+        onGetStarted={handleGetStarted}
+      />
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
