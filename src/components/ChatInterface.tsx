@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Minimize2, Maximize2, Send, MoreVertical, Copy, Trash2, PaperPlane } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -200,7 +199,7 @@ const ChatInterface = ({ hasDocuments }: ChatInterfaceProps) => {
                     disabled={!inputValue.trim() || !hasDocuments || isTyping}
                     className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
                   >
-                    <PaperPlane className="h-4 w-4" />
+                    <Send className="h-4 w-4" />
                   </Button>
                 </div>
                 {!hasDocuments && (
