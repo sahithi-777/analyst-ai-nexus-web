@@ -1,10 +1,12 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send, MoreVertical, Trash2 } from 'lucide-react';
+import { MessageSquare, Send, MoreVertical, Trash2, Minimize2, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import ChatMessage from './chat/ChatMessage';
 import TypingIndicator from './chat/TypingIndicator';
 import SuggestedQuestions from './chat/SuggestedQuestions';
@@ -25,6 +27,7 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -197,7 +200,6 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
     <div className="fixed bottom-0 right-6 z-50 w-96 max-w-[calc(100vw-3rem)]">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div className="bg-gray-900 border border-gray-700 rounded-t-lg shadow-2xl">
-          {/* Chat Header */}
           <CollapsibleTrigger asChild>
             <div className="flex items-center justify-between p-4 border-b border-gray-700 cursor-pointer hover:bg-gray-800 transition-colors">
               <div className="flex items-center space-x-3">
@@ -235,7 +237,6 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
 
           <CollapsibleContent>
             <div className="h-96 flex flex-col">
-              {/* Messages Area */}
               <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
                 <div className="space-y-4">
                   {messages.length === 0 && !hasDocuments && (
@@ -264,7 +265,6 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
                 </div>
               </ScrollArea>
 
-              {/* Input Area */}
               <div className="p-4 border-t border-gray-700">
                 <div className="flex space-x-2">
                   <Input
