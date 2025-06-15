@@ -21,88 +21,55 @@ serve(async (req) => {
       throw new Error('Anthropic API key not configured');
     }
 
-    console.log(`Generating research questions for ${files?.length || 0} documents${url ? ' and URL' : ''}`);
+    console.log(`Generating research questions for ${files.length} documents`);
 
     // Prepare document context
-    let documentContext = '';
-    if (files && files.length > 0) {
-      documentContext = files.map(file => `
+    const documentContext = files.map(file => `
 Document: ${file.name}
-Content: ${file.extractedText || file.content}
+Content: ${file.extractedText}
 Topic: ${file.metadata?.topic || 'Unknown'}
 Category: ${file.metadata?.category || 'Unknown'}
-Keywords: ${file.metadata?.keywords?.join(', ') || 'None'}
 ---
-      `).join('\n');
-    }
+    `).join('\n');
 
-    // Prepare URL context if provided
-    let urlContext = '';
-    if (url) {
-      try {
-        // Fetch URL content (simplified - in production you'd want proper web scraping)
-        urlContext = `\nURL Source: ${url}\nNote: URL content analysis requested\n---\n`;
-      } catch (error) {
-        console.warn('Could not fetch URL content:', error);
-        urlContext = `\nURL Source: ${url}\nNote: URL provided for context\n---\n`;
-      }
-    }
+    const urlContext = url ? `\nAdditional URL Context: ${url}` : '';
 
     const questionPrompt = `
-You are an expert research assistant and question generator. Based on the provided content, generate intelligent research questions that would help researchers deeply understand and explore the material.
+You are a research question generation expert. Based on the following documents, generate intelligent research questions that would help researchers dive deeper into the content.
 
-Content to analyze:
+Documents:
 ${documentContext}
 ${urlContext}
 
-Generate exactly 12 diverse research questions in the following JSON format:
+Generate 8-12 research questions in this exact JSON format:
 {
   "questions": [
     {
-      "question": "specific, actionable research question",
+      "question": "specific research question text",
       "type": "analytical|comparative|exploratory",
-      "difficulty": "beginner|intermediate|advanced",
+      "difficulty": "beginner|intermediate|advanced", 
       "category": "methodology|theory|application|evaluation",
-      "rationale": "why this question is important and what insights it could reveal",
-      "estimatedTime": "estimated time to research this question",
-      "sourceDocuments": ["list of relevant document names"],
-      "templates": ["related question templates"]
+      "rationale": "why this question is important and what it explores",
+      "estimatedTime": "X minutes",
+      "sourceDocuments": ["document1.pdf", "document2.pdf"],
+      "templates": ["template suggestions for answering"]
     }
   ]
 }
 
-Question Types:
-- analytical: Questions that require deep analysis, breaking down components, examining relationships
-- comparative: Questions that compare different approaches, theories, or findings
-- exploratory: Questions that open new research directions or investigate unexplored areas
+Focus on:
+1. Questions that reveal deeper insights about the research
+2. Comparative analysis between different documents
+3. Methodological exploration opportunities
+4. Practical application possibilities
+5. Areas that need further investigation
+6. Theoretical implications of the findings
 
-Difficulty Levels:
-- beginner: Questions accessible to newcomers, focusing on basic understanding
-- intermediate: Questions requiring some domain knowledge and analytical thinking
-- advanced: Complex questions requiring deep expertise and sophisticated analysis
-
-Categories:
-- methodology: Questions about research methods, data collection, analysis techniques
-- theory: Questions about theoretical frameworks, concepts, models
-- application: Questions about practical implementation, real-world applications
-- evaluation: Questions about assessment, effectiveness, impact, validation
-
-Guidelines:
-1. Make questions specific and actionable
-2. Ensure questions are relevant to the actual content provided
-3. Vary the types, difficulties, and categories
-4. Include clear rationales explaining the value of each question
-5. Provide realistic time estimates (e.g., "2-3 hours", "1-2 weeks", "3-4 days")
-6. Reference specific documents when relevant
-7. Create questions that would lead to meaningful insights
-
-Focus on generating questions that would:
-- Reveal hidden patterns or connections
-- Challenge assumptions
-- Explore gaps in knowledge
-- Compare different perspectives
-- Evaluate effectiveness or validity
-- Suggest new research directions
+Make sure questions are:
+- Specific and actionable
+- Based on actual document content
+- Varied in difficulty and type
+- Thought-provoking and research-worthy
 `;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -114,7 +81,7 @@ Focus on generating questions that would:
       },
       body: JSON.stringify({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 3000,
+        max_tokens: 2000,
         messages: [
           {
             role: 'user',
@@ -131,43 +98,19 @@ Focus on generating questions that would:
     }
 
     const data = await response.json();
-    const questionsText = data.content[0].text;
+    const responseText = data.content[0].text;
     
-    let questionResults;
+    let questionsData;
     try {
-      questionResults = JSON.parse(questionsText);
+      questionsData = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('Failed to parse Claude response as JSON:', questionsText);
-      // Fallback with basic questions
-      questionResults = {
-        questions: [
-          {
-            question: "What are the main themes and concepts presented in the documents?",
-            type: "analytical",
-            difficulty: "beginner",
-            category: "theory",
-            rationale: "Understanding core themes helps establish foundational knowledge",
-            estimatedTime: "1-2 hours",
-            sourceDocuments: files?.map(f => f.name) || [],
-            templates: []
-          },
-          {
-            question: "How do different documents compare in their approach to the subject matter?",
-            type: "comparative",
-            difficulty: "intermediate",
-            category: "methodology",
-            rationale: "Comparing approaches reveals different perspectives and methodologies",
-            estimatedTime: "3-4 hours",
-            sourceDocuments: files?.map(f => f.name) || [],
-            templates: []
-          }
-        ]
-      };
+      console.error('Failed to parse Claude response:', responseText);
+      throw new Error('Failed to parse research questions');
     }
 
-    console.log(`Generated ${questionResults.questions?.length || 0} research questions`);
+    console.log('Research questions generated successfully');
 
-    return new Response(JSON.stringify(questionResults), {
+    return new Response(JSON.stringify(questionsData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

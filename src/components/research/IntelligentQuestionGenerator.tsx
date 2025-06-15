@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Lightbulb, Play, RefreshCw, Loader2, Download, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { RealProcessedFile } from '@/utils/realAiProcessor';
 import { supabase } from '@/integrations/supabase/client';
+import { executeChatQuestion } from '@/utils/chatHelpers';
 
 interface ResearchQuestion {
   question: string;
@@ -86,12 +86,22 @@ const IntelligentQuestionGenerator = ({
     }
   };
 
-  const executeQuestion = (question: string) => {
+  const executeQuestion = async (question: string) => {
     onQuestionExecute?.(question);
-    toast({
-      title: "Question Executed",
-      description: "Sending question to Claude for analysis...",
-    });
+    
+    // Also get immediate response and show it
+    try {
+      const response = await executeChatQuestion(question, processedFiles);
+      toast({
+        title: "Claude Response Ready",
+        description: "Check the chat interface for the analysis",
+      });
+    } catch (error) {
+      toast({
+        title: "Question Sent",
+        description: "Sending question to Claude for analysis...",
+      });
+    }
   };
 
   const exportQuestions = () => {

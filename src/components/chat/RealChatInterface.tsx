@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { RealProcessedFile, RealAiProcessor } from '@/utils/realAiProcessor';
 import ChatMessage from './ChatMessage';
-import TypingIndicator from './TypingIndicator';
 
 interface Message {
   id: string;
@@ -20,9 +19,10 @@ interface Message {
 interface RealChatInterfaceProps {
   processedFiles: RealProcessedFile[];
   isEmbedded?: boolean;
+  initialQuestion?: string;
 }
 
-const RealChatInterface = ({ processedFiles, isEmbedded = false }: RealChatInterfaceProps) => {
+const RealChatInterface = ({ processedFiles, isEmbedded = false, initialQuestion }: RealChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -43,6 +43,13 @@ const RealChatInterface = ({ processedFiles, isEmbedded = false }: RealChatInter
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
+
+  // Handle initial question from research question generator
+  useEffect(() => {
+    if (initialQuestion && hasDocuments) {
+      handleSendMessage(initialQuestion);
+    }
+  }, [initialQuestion, hasDocuments]);
 
   const handleSendMessage = async (text: string) => {
     if (!text.trim() || isTyping) return;
