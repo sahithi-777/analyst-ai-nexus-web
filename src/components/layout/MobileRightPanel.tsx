@@ -23,20 +23,20 @@ const MobileRightPanel = ({ isOpen, onClose, hasDocuments }: MobileRightPanelPro
         onClick={onClose}
       />
       
-      {/* Slide-up panel */}
+      {/* Slide-up panel with fixed height */}
       <div className={`
         absolute bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 
-        transition-all duration-300 ease-out
-        ${isExpanded ? 'h-[85vh]' : 'h-[60vh]'}
+        transition-all duration-300 ease-out flex flex-col
+        ${isExpanded ? 'h-[90vh]' : 'h-[70vh]'}
         rounded-t-2xl shadow-xl
       `}>
         {/* Handle */}
-        <div className="flex items-center justify-center py-3 border-b border-gray-800/50">
+        <div className="flex items-center justify-center py-3 border-b border-gray-800/50 flex-shrink-0">
           <div className="w-12 h-1 bg-gray-600 rounded-full" />
         </div>
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800/50">
+        <div className="flex items-center justify-between p-4 border-b border-gray-800/50 flex-shrink-0">
           <h3 className="text-lg font-semibold text-white">Insights & Chat</h3>
           <div className="flex items-center space-x-2">
             <Button
@@ -58,7 +58,7 @@ const MobileRightPanel = ({ isOpen, onClose, hasDocuments }: MobileRightPanelPro
           </div>
         </div>
         
-        {/* Content */}
+        {/* Content - flex-1 to take remaining space */}
         <div className="flex-1 overflow-hidden">
           <RightPanel hasDocuments={hasDocuments} />
         </div>

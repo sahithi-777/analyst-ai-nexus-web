@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Bell, Search, Settings, X, PanelRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { useNotifications } from '@/components/ui/notification';
 import UserAvatar from '../UserAvatar';
 import MobileBottomNav from './MobileBottomNav';
 import MobileRightPanel from './MobileRightPanel';
+import MobileBreadcrumb from '../ui/mobile-breadcrumb';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardLayoutProps {
@@ -17,16 +18,28 @@ interface DashboardLayoutProps {
   sidebar: React.ReactNode;
   rightPanel?: React.ReactNode;
   hasDocuments?: boolean;
+  breadcrumbs?: Array<{
+    label: string;
+    href?: string;
+    onClick?: () => void;
+    icon?: React.ElementType;
+  }>;
 }
 
-const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false }: DashboardLayoutProps) => {
+const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false, breadcrumbs = [] }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { user, demoMode } = useAuth();
   const { addNotification } = useNotifications();
+  
+  // Focus management refs
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const mobileSearchRef = useRef<HTMLInputElement>(null);
+  const skipLinkRef = useRef<HTMLAnchorElement>(null);
 
   // Check if mobile
   useEffect(() => {
@@ -38,6 +51,55 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false }
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Simulate loading for better UX
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Focus management for search
+  useEffect(() => {
+    if (searchOpen && mobileSearchRef.current) {
+      mobileSearchRef.current.focus();
+    }
+  }, [searchOpen]);
+
+  // Enhanced keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Skip link navigation
+      if (event.key === 'Tab' && !event.shiftKey && event.target === document.body) {
+        skipLinkRef.current?.focus();
+      }
+
+      // Escape key handlers
+      if (event.key === 'Escape') {
+        if (searchOpen) {
+          setSearchOpen(false);
+        } else if (sidebarOpen && isMobile) {
+          setSidebarOpen(false);
+        } else if (rightPanelOpen) {
+          setRightPanelOpen(false);
+        }
+      }
+
+      // Arrow key navigation for mobile tabs
+      if (isMobile && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+        const navItems = ['dashboard', 'documents', 'analytics', 'settings'];
+        const currentIndex = navItems.indexOf(activeTab);
+        
+        if (event.key === 'ArrowLeft' && currentIndex > 0) {
+          setActiveTab(navItems[currentIndex - 1]);
+        } else if (event.key === 'ArrowRight' && currentIndex < navItems.length - 1) {
+          setActiveTab(navItems[currentIndex + 1]);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [searchOpen, sidebarOpen, rightPanelOpen, isMobile, activeTab]);
 
   const shortcuts = [
     {
@@ -57,7 +119,10 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false }
     {
       key: 'k',
       description: 'Search',
-      action: () => setSearchOpen(true)
+      action: () => {
+        setSearchOpen(true);
+        setTimeout(() => searchInputRef.current?.focus(), 100);
+      }
     },
     {
       key: ',',
@@ -96,8 +161,30 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false }
     });
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="text-gray-400">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 w-full">
+      {/* Skip to main content link for accessibility */}
+      <a
+        ref={skipLinkRef}
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-lg z-50"
+      >
+        Skip to main content
+      </a>
+
       {/* Enhanced Mobile-First Header */}
       <header className="sticky top-0 z-50 border-b border-gray-800/50 bg-gray-900/90 backdrop-blur-xl">
         <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4 lg:px-6">
@@ -108,6 +195,7 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false }
               size="sm"
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-all duration-200 lg:hidden"
+              aria-label="Toggle sidebar"
             >
               <Menu className="h-5 w-5" />
             </Button>
@@ -132,6 +220,7 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false }
             <div className="hidden lg:flex relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
+                ref={searchInputRef}
                 placeholder="Search documents... (Ctrl+K)"
                 className="pl-10 w-48 xl:w-64 bg-gray-800/50 border-gray-700/50 text-white placeholder-gray-400 focus:border-blue-500/50 focus:ring-blue-500/20"
               />
@@ -143,13 +232,19 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false }
               size="sm" 
               className="lg:hidden p-2 text-gray-400 hover:text-white"
               onClick={() => setSearchOpen(true)}
+              aria-label="Open search"
             >
               <Search className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
             
             <ThemeToggle />
             
-            <Button variant="ghost" size="sm" className="relative p-2 text-gray-400 hover:text-white">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="relative p-2 text-gray-400 hover:text-white"
+              aria-label="Notifications"
+            >
               <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
               <Badge className="absolute -top-1 -right-1 h-2 w-2 p-0 bg-red-500"></Badge>
             </Button>
@@ -161,6 +256,7 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false }
                 size="sm" 
                 className="xl:hidden p-2 text-gray-400 hover:text-white"
                 onClick={() => setRightPanelOpen(!rightPanelOpen)}
+                aria-label="Toggle insights panel"
               >
                 <PanelRight className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
@@ -176,6 +272,7 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false }
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
+                ref={mobileSearchRef}
                 placeholder="Search documents..."
                 className="pl-10 pr-10 bg-gray-800/50 border-gray-700/50 text-white placeholder-gray-400 focus:border-blue-500/50 focus:ring-blue-500/20"
                 autoFocus
@@ -185,11 +282,17 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false }
                 size="sm"
                 onClick={() => setSearchOpen(false)}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-white"
+                aria-label="Close search"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
+        )}
+
+        {/* Mobile Breadcrumbs */}
+        {breadcrumbs.length > 0 && (
+          <MobileBreadcrumb items={breadcrumbs} />
         )}
       </header>
 
@@ -213,7 +316,7 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false }
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-hidden min-w-0">
+        <main id="main-content" className="flex-1 overflow-hidden min-w-0" role="main">
           <div className="h-full overflow-y-auto">
             <div className="p-3 sm:p-4 lg:p-6 xl:p-8 pb-20 lg:pb-8">
               {children}

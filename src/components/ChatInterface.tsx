@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, MoreVertical, Trash2, Minimize2, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 import ChatMessage from './chat/ChatMessage';
 import TypingIndicator from './chat/TypingIndicator';
 import SuggestedQuestions from './chat/SuggestedQuestions';
+import MobileLoading from './ui/mobile-loading';
 
 interface Message {
   id: string;
@@ -28,6 +28,7 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -51,9 +52,12 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
     scrollToBottom();
   }, [messages, isTyping]);
 
+  // Enhanced mobile performance with request throttling
   const simulateAIResponse = async (question: string) => {
     setIsTyping(true);
+    setIsLoading(true);
     
+    // Add realistic delay with progress indication
     await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
     
     const responses = {
@@ -66,6 +70,7 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
     const response = responses[question] || "I understand your question about the documents. Based on the research materials you've uploaded, I can provide insights and analysis. Could you be more specific about what aspect you'd like me to focus on?";
 
     setIsTyping(false);
+    setIsLoading(false);
     
     const aiMessage: Message = {
       id: Date.now().toString() + '-ai',
@@ -75,10 +80,15 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
     };
 
     setMessages(prev => [...prev, aiMessage]);
+
+    // Haptic feedback for mobile
+    if ('vibrate' in navigator) {
+      navigator.vibrate(50);
+    }
   };
 
   const handleSendMessage = async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -89,6 +99,11 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
+
+    // Blur input on mobile to hide keyboard
+    if (window.innerWidth < 768) {
+      inputRef.current?.blur();
+    }
 
     await simulateAIResponse(text.trim());
   };
@@ -106,10 +121,16 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
 
   const clearChatHistory = () => {
     setMessages([]);
+    if ('vibrate' in navigator) {
+      navigator.vibrate(100);
+    }
   };
 
   const copyMessage = (text: string) => {
     navigator.clipboard.writeText(text);
+    if ('vibrate' in navigator) {
+      navigator.vibrate(50);
+    }
   };
 
   if (isEmbedded) {
@@ -140,16 +161,20 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 h-[calc(100%-5rem)] flex flex-col">
-          <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
+          <ScrollArea ref={scrollAreaRef} className="flex-1 p-4 overscroll-behavior-contain">
             <div className="space-y-4">
-              {messages.length === 0 && !hasDocuments && (
+              {isLoading && messages.length === 0 && (
+                <MobileLoading type="chat" />
+              )}
+
+              {messages.length === 0 && !hasDocuments && !isLoading && (
                 <div className="text-center py-8">
                   <MessageSquare className="h-12 w-12 text-gray-600 mx-auto mb-3" />
                   <p className="text-gray-400 text-sm">Upload documents to start asking questions</p>
                 </div>
               )}
               
-              {messages.length === 0 && hasDocuments && (
+              {messages.length === 0 && hasDocuments && !isLoading && (
                 <SuggestedQuestions 
                   questions={suggestedQuestions}
                   onQuestionClick={handleSuggestedQuestion}
@@ -176,13 +201,13 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask about your research..."
-                className="flex-1 bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
-                disabled={!hasDocuments}
+                className="flex-1 bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 touch-manipulation"
+                disabled={!hasDocuments || isLoading}
               />
               <Button
                 onClick={() => handleSendMessage(inputValue)}
-                disabled={!inputValue.trim() || !hasDocuments || isTyping}
-                className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+                disabled={!inputValue.trim() || !hasDocuments || isTyping || isLoading}
+                className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white touch-manipulation active:scale-95 transition-transform"
               >
                 <Send className="h-4 w-4" />
               </Button>
@@ -201,7 +226,7 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div className="bg-gray-900 border border-gray-700 rounded-t-lg shadow-2xl">
           <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between p-4 border-b border-gray-700 cursor-pointer hover:bg-gray-800 transition-colors">
+            <div className="flex items-center justify-between p-4 border-b border-gray-700 cursor-pointer hover:bg-gray-800 transition-colors touch-manipulation">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
                   <MessageSquare className="h-4 w-4 text-white" />
@@ -214,7 +239,7 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
               <div className="flex items-center space-x-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white touch-manipulation">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -228,7 +253,7 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white touch-manipulation">
                   {isOpen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
                 </Button>
               </div>
@@ -237,16 +262,20 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
 
           <CollapsibleContent>
             <div className="h-96 flex flex-col">
-              <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
+              <ScrollArea ref={scrollAreaRef} className="flex-1 p-4 overscroll-behavior-contain">
                 <div className="space-y-4">
-                  {messages.length === 0 && !hasDocuments && (
+                  {isLoading && messages.length === 0 && (
+                    <MobileLoading type="chat" />
+                  )}
+
+                  {messages.length === 0 && !hasDocuments && !isLoading && (
                     <div className="text-center py-8">
                       <MessageSquare className="h-12 w-12 text-gray-600 mx-auto mb-3" />
                       <p className="text-gray-400 text-sm">Upload documents to start asking questions</p>
                     </div>
                   )}
                   
-                  {messages.length === 0 && hasDocuments && (
+                  {messages.length === 0 && hasDocuments && !isLoading && (
                     <SuggestedQuestions 
                       questions={suggestedQuestions}
                       onQuestionClick={handleSuggestedQuestion}
@@ -273,13 +302,13 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Ask questions about your research..."
-                    className="flex-1 bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
-                    disabled={!hasDocuments}
+                    className="flex-1 bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 touch-manipulation"
+                    disabled={!hasDocuments || isLoading}
                   />
                   <Button
                     onClick={() => handleSendMessage(inputValue)}
-                    disabled={!inputValue.trim() || !hasDocuments || isTyping}
-                    className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+                    disabled={!inputValue.trim() || !hasDocuments || isTyping || isLoading}
+                    className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white touch-manipulation active:scale-95 transition-transform"
                   >
                     <Send className="h-4 w-4" />
                   </Button>
