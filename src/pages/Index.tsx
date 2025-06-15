@@ -1,13 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import MainContent from '../components/MainContent';
+import ChatInterface from '../components/ChatInterface';
 
 const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [hasDocuments, setHasDocuments] = useState(false);
   const { user, loading, demoMode } = useAuth();
   const navigate = useNavigate();
 
@@ -16,6 +17,14 @@ const Index = () => {
       navigate('/auth');
     }
   }, [user, loading, demoMode, navigate]);
+
+  // Simulate document upload detection
+  useEffect(() => {
+    // In a real implementation, this would be passed from UploadArea
+    // For demo purposes, we'll set it to true after a delay
+    const timer = setTimeout(() => setHasDocuments(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Show loading while checking authentication
   if (loading) {
@@ -51,6 +60,9 @@ const Index = () => {
         <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
         <MainContent />
       </div>
+      
+      {/* Chat Interface */}
+      <ChatInterface hasDocuments={hasDocuments} />
     </div>
   );
 };
