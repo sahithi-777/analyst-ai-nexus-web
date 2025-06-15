@@ -2,11 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Brain, TrendingUp, Users, Clock, BarChart3 } from 'lucide-react';
+import { FileText, Brain, TrendingUp } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Sidebar from '../components/Sidebar';
 import RightPanel from '../components/RightPanel';
-import MainContent from '../components/MainContent';
 import StatsGrid from '../components/dashboard/StatsGrid';
 import QuickActions from '../components/dashboard/QuickActions';
 import OnboardingFlow from '../components/onboarding/OnboardingFlow';
@@ -30,7 +29,6 @@ const Index = () => {
   }, [user, loading, demoMode, navigate]);
 
   useEffect(() => {
-    // Check if user is new (for demo purposes, always show onboarding to new sessions)
     const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
     if (!hasSeenOnboarding && (user || demoMode)) {
       setShowOnboarding(true);
@@ -154,13 +152,13 @@ const Index = () => {
         sidebar={<Sidebar isOpen={false} onClose={() => {}} />}
         rightPanel={<RightPanel hasDocuments={hasDocuments} />}
       >
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
           {/* Welcome Section */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent mb-3">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent mb-2 sm:mb-3">
               Research Dashboard
             </h1>
-            <p className="text-xl text-gray-400 max-w-2xl">
+            <p className="text-base sm:text-lg lg:text-xl text-gray-400 max-w-2xl">
               Upload documents, analyze content, and generate AI-powered insights with advanced document intelligence.
             </p>
           </div>
@@ -168,9 +166,9 @@ const Index = () => {
           {/* Enhanced Stats Grid */}
           <StatsGrid stats={stats} />
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
             {/* Quick Actions */}
-            <div className="xl:col-span-1">
+            <div className="xl:col-span-1 order-1 xl:order-1">
               <QuickActions
                 onUploadClick={() => handleQuickAction('upload')}
                 onAnalyzeClick={() => handleQuickAction('analyze')}
@@ -180,14 +178,14 @@ const Index = () => {
             </div>
 
             {/* Main Content Area */}
-            <div className="xl:col-span-2">
+            <div className="xl:col-span-2 order-2 xl:order-2">
               {showUpload ? (
-                <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 backdrop-blur-sm">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-white">Upload Documents</h2>
+                <div className="bg-gray-800/50 rounded-xl p-4 sm:p-6 border border-gray-700/50 backdrop-blur-sm">
+                  <div className="flex items-center justify-between mb-4 sm:mb-6">
+                    <h2 className="text-lg sm:text-xl font-semibold text-white">Upload Documents</h2>
                     <button
                       onClick={() => setShowUpload(false)}
-                      className="text-gray-400 hover:text-white"
+                      className="text-gray-400 hover:text-white text-xl sm:text-base"
                     >
                       ✕
                     </button>
@@ -195,7 +193,25 @@ const Index = () => {
                   <EnhancedUploadArea onFilesProcessed={handleFilesProcessed} />
                 </div>
               ) : (
-                <MainContent hasDocuments={hasDocuments} />
+                <div className="bg-gray-800/50 rounded-xl p-4 sm:p-6 border border-gray-700/50 backdrop-blur-sm">
+                  <div className="text-center py-8 sm:py-12">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
+                      <FileText className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-semibold text-white mb-2 sm:mb-3">
+                      Welcome to your AI Research Hub
+                    </h3>
+                    <p className="text-sm sm:text-base text-gray-400 mb-6 sm:mb-8 max-w-md mx-auto">
+                      Start by uploading documents to analyze, or explore the demo features to see what's possible.
+                    </p>
+                    <button
+                      onClick={() => setShowUpload(true)}
+                      className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-3 sm:px-8 sm:py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 shadow-lg"
+                    >
+                      Get Started
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>

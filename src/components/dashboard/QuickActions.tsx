@@ -58,31 +58,31 @@ const QuickActions = ({ onUploadClick, onAnalyzeClick, onExportClick, onNewProje
 
   return (
     <Card className="border-gray-800/50 bg-gradient-to-br from-gray-900/50 to-gray-800/30 backdrop-blur-sm">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-white flex items-center space-x-2">
-          <Zap className="h-5 w-5 text-yellow-400" />
+      <CardHeader className="pb-3 sm:pb-4">
+        <CardTitle className="text-white flex items-center space-x-2 text-base sm:text-lg">
+          <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
           <span>Quick Actions</span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-4">
+      <CardContent className="p-3 sm:p-6 pt-0">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4">
           {actions.map((action) => (
             <Button
               key={action.id}
               onClick={action.onClick}
               className={`
-                group relative h-auto p-4 bg-gradient-to-br ${action.gradient} 
+                group relative h-auto p-3 sm:p-4 bg-gradient-to-br ${action.gradient} 
                 hover:scale-105 transition-all duration-300 hover:shadow-lg
-                border-0 text-white
+                border-0 text-white min-h-[80px] sm:min-h-[100px]
               `}
             >
-              <div className="flex flex-col items-center space-y-2 text-center">
-                <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-                  <action.icon className="h-5 w-5" />
+              <div className="flex flex-col items-center space-y-1 sm:space-y-2 text-center">
+                <div className="p-1.5 sm:p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+                  <action.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
                 <div>
-                  <div className="font-semibold text-sm">{action.title}</div>
-                  <div className="text-xs opacity-90">{action.description}</div>
+                  <div className="font-semibold text-xs sm:text-sm leading-tight">{action.title}</div>
+                  <div className="text-xs opacity-90 mt-0.5 sm:mt-1 leading-tight hidden sm:block">{action.description}</div>
                 </div>
               </div>
               
