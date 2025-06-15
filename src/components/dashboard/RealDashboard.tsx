@@ -36,6 +36,12 @@ const RealDashboard = () => {
     }, 100);
   };
 
+  const handleTabChange = (value: string) => {
+    if (value === "upload" || value === "analysis" || value === "chat" || value === "questions") {
+      setActiveTab(value);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <header className="bg-gray-900 border-b border-gray-800 py-4">
@@ -86,7 +92,7 @@ const RealDashboard = () => {
               </div>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <TabsList className="grid w-full grid-cols-4 bg-gray-800 border border-gray-700">
                 <TabsTrigger value="upload" className="text-gray-300 data-[state=active]:text-white data-[state=active]:bg-gray-700">
                   Documents
