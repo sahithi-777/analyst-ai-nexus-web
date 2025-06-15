@@ -6,16 +6,34 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import WelcomeGuide from './WelcomeGuide';
+import EnhancedUploadArea from '@/components/upload/EnhancedUploadArea';
+import IntelligentAnalysisInterface from '@/components/analysis/IntelligentAnalysisInterface';
+import AdvancedChatInterface from '@/components/chat/AdvancedChatInterface';
+import { SmartProcessedFile, IntelligentAnalysis } from '@/utils/intelligentFileProcessor';
 
 const Dashboard = () => {
   const [showExploreGuide, setShowExploreGuide] = useState(true);
   const [showWelcomeGuide, setShowWelcomeGuide] = useState(true);
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [processedFiles, setProcessedFiles] = useState<SmartProcessedFile[]>([]);
+  const [analysisResults, setAnalysisResults] = useState<IntelligentAnalysis | null>(null);
 
   // Navigation handler
   const handleNavigation = (section: string) => {
     setActiveSection(section);
     console.log(`Navigating to ${section}`);
+  };
+
+  // Handle files processed from upload area
+  const handleFilesProcessed = (files: SmartProcessedFile[]) => {
+    setProcessedFiles(files);
+    console.log('Files processed:', files);
+  };
+
+  // Handle analysis completion
+  const handleAnalysisComplete = (results: IntelligentAnalysis) => {
+    setAnalysisResults(results);
+    console.log('Analysis completed:', results);
   };
 
   // Simple sidebar content with functional navigation
@@ -63,6 +81,17 @@ const Dashboard = () => {
           <span>Analytics</span>
         </button>
         <button
+          onClick={() => handleNavigation('chat')}
+          className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-colors ${
+            activeSection === 'chat' 
+              ? 'bg-cyan-600/20 text-cyan-400' 
+              : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+          }`}
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span>Research Chat</span>
+        </button>
+        <button
           onClick={() => handleNavigation('settings')}
           className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-colors ${
             activeSection === 'settings' 
@@ -84,7 +113,7 @@ const Dashboard = () => {
         <div className="flex items-center justify-between">
           <CardTitle className="text-white flex items-center space-x-2">
             <Sparkles className="h-5 w-5 text-yellow-400" />
-            <span>Explore AI Research Hub</span>
+            <span>Intelligent Research Analysis</span>
           </CardTitle>
           <Button
             variant="ghost"
@@ -103,9 +132,9 @@ const Dashboard = () => {
               <Upload className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h3 className="text-white font-medium">Upload Documents</h3>
-              <p className="text-gray-400 text-sm mt-1">Start by uploading research papers, reports, or any documents you want to analyze</p>
-              <Badge className="mt-2 bg-green-600/20 text-green-400 border-green-600/30">Step 1</Badge>
+              <h3 className="text-white font-medium">Smart Upload</h3>
+              <p className="text-gray-400 text-sm mt-1">Upload documents for intelligent metadata extraction and contextual analysis</p>
+              <Badge className="mt-2 bg-green-600/20 text-green-400 border-green-600/30">AI-Powered</Badge>
             </div>
           </div>
           
@@ -114,9 +143,9 @@ const Dashboard = () => {
               <Brain className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h3 className="text-white font-medium">AI Analysis</h3>
-              <p className="text-gray-400 text-sm mt-1">Get intelligent insights, theme extraction, and contradiction detection</p>
-              <Badge className="mt-2 bg-purple-600/20 text-purple-400 border-purple-600/30">Step 2</Badge>
+              <h3 className="text-white font-medium">Intelligent Analysis</h3>
+              <p className="text-gray-400 text-sm mt-1">Advanced AI analysis with contextual insights, contradictions, and connections</p>
+              <Badge className="mt-2 bg-purple-600/20 text-purple-400 border-purple-600/30">Advanced AI</Badge>
             </div>
           </div>
           
@@ -125,9 +154,9 @@ const Dashboard = () => {
               <MessageSquare className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h3 className="text-white font-medium">Research Chat</h3>
-              <p className="text-gray-400 text-sm mt-1">Ask questions about your documents and get instant AI-powered answers</p>
-              <Badge className="mt-2 bg-cyan-600/20 text-cyan-400 border-cyan-600/30">Step 3</Badge>
+              <h3 className="text-white font-medium">Research Assistant</h3>
+              <p className="text-gray-400 text-sm mt-1">Chat with AI about your documents with citations and smart suggestions</p>
+              <Badge className="mt-2 bg-cyan-600/20 text-cyan-400 border-cyan-600/30">Interactive</Badge>
             </div>
           </div>
         </div>
@@ -138,7 +167,7 @@ const Dashboard = () => {
             className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
           >
             <BookOpen className="h-4 w-4 mr-2" />
-            Take Full Tour
+            Take Complete Tour
           </Button>
         </div>
       </CardContent>
@@ -152,28 +181,22 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Documents</h1>
-              <p className="text-gray-400">Manage and analyze your research documents</p>
+              <h1 className="text-3xl font-bold text-white mb-2">Document Management</h1>
+              <p className="text-gray-400">Upload and manage your research documents with intelligent processing</p>
             </div>
             
-            <Card className="bg-gray-800/50 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-green-400" />
-                  <span>Document Library</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Upload className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-400 mb-4">No documents uploaded yet</p>
-                  <Button className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Upload Documents
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <EnhancedUploadArea
+              onFilesProcessed={handleFilesProcessed}
+              maxFiles={10}
+              maxSize={10 * 1024 * 1024}
+            />
+
+            {processedFiles.length > 0 && (
+              <IntelligentAnalysisInterface
+                processedFiles={processedFiles}
+                onAnalysisComplete={handleAnalysisComplete}
+              />
+            )}
           </div>
         );
 
@@ -181,22 +204,22 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Analytics</h1>
-              <p className="text-gray-400">View insights and analytics from your research</p>
+              <h1 className="text-3xl font-bold text-white mb-2">Analytics Dashboard</h1>
+              <p className="text-gray-400">View comprehensive analytics and insights from your research</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center space-x-2">
                     <Activity className="h-5 w-5 text-blue-400" />
-                    <span>Analysis Activity</span>
+                    <span>Documents</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-white">0</p>
-                    <p className="text-gray-400 text-sm">Analyses this month</p>
+                    <p className="text-3xl font-bold text-white">{processedFiles.length}</p>
+                    <p className="text-gray-400 text-sm">Total uploaded</p>
                   </div>
                 </CardContent>
               </Card>
@@ -205,12 +228,17 @@ const Dashboard = () => {
                 <CardHeader>
                   <CardTitle className="text-white flex items-center space-x-2">
                     <TrendingUp className="h-5 w-5 text-green-400" />
-                    <span>Success Rate</span>
+                    <span>Confidence Score</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-white">--</p>
+                    <p className="text-3xl font-bold text-white">
+                      {processedFiles.length > 0 
+                        ? Math.round(processedFiles.reduce((sum, f) => sum + (f.metadata?.confidenceScore || 0), 0) / processedFiles.length)
+                        : '--'
+                      }%
+                    </p>
                     <p className="text-gray-400 text-sm">Average accuracy</p>
                   </div>
                 </CardContent>
@@ -219,18 +247,98 @@ const Dashboard = () => {
               <Card className="bg-gray-800/50 border-gray-700">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center space-x-2">
-                    <Clock className="h-5 w-5 text-purple-400" />
-                    <span>Processing Time</span>
+                    <Brain className="h-5 w-5 text-purple-400" />
+                    <span>Insights</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-white">--</p>
+                    <p className="text-3xl font-bold text-white">
+                      {analysisResults?.summary.keyInsights.length || 0}
+                    </p>
+                    <p className="text-gray-400 text-sm">Generated insights</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-800/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center space-x-2">
+                    <Clock className="h-5 w-5 text-orange-400" />
+                    <span>Processing</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-white">
+                      {analysisResults?.statistics.processingTime || '--'}
+                    </p>
                     <p className="text-gray-400 text-sm">Average time</p>
                   </div>
                 </CardContent>
               </Card>
             </div>
+
+            {analysisResults && (
+              <Card className="bg-gray-800/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Analysis Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <h4 className="text-white font-medium mb-2">Document Categories</h4>
+                      {Object.entries(analysisResults.summary.documentTypes).map(([type, count]) => (
+                        <div key={type} className="flex justify-between items-center py-1">
+                          <span className="text-gray-400">{type}</span>
+                          <Badge variant="outline" className="text-gray-300">{count}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <h4 className="text-white font-medium mb-2">Key Topics</h4>
+                      {analysisResults.summary.primaryTopics.slice(0, 4).map((topic, idx) => (
+                        <div key={idx} className="py-1">
+                          <Badge variant="outline" className="text-gray-300">{topic}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <h4 className="text-white font-medium mb-2">Analysis Stats</h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Connections:</span>
+                          <span className="text-white">{analysisResults.connections.length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Contradictions:</span>
+                          <span className="text-white">{analysisResults.contradictions.length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Research Gaps:</span>
+                          <span className="text-white">{analysisResults.gaps.length}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        );
+
+      case 'chat':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2">Research Assistant</h1>
+              <p className="text-gray-400">Chat with AI about your documents and get intelligent insights</p>
+            </div>
+            
+            <AdvancedChatInterface
+              hasDocuments={processedFiles.length > 0}
+              documents={processedFiles.map(f => f.name)}
+            />
           </div>
         );
 
@@ -303,12 +411,12 @@ const Dashboard = () => {
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Welcome to AI Research Hub</h1>
-              <p className="text-gray-400">Analyze documents with artificial intelligence</p>
+              <p className="text-gray-400">Intelligent document analysis powered by advanced AI</p>
             </div>
             
             {showExploreGuide && <ExploreGuide />}
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer" onClick={() => handleNavigation('documents')}>
                 <CardHeader>
                   <CardTitle className="text-white flex items-center space-x-2">
@@ -318,8 +426,8 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-white">0</p>
-                    <p className="text-gray-400 text-sm">Documents uploaded</p>
+                    <p className="text-2xl font-bold text-white">{processedFiles.length}</p>
+                    <p className="text-gray-400 text-sm">Documents processed</p>
                     <Button variant="ghost" className="mt-2 text-green-400 hover:text-green-300">
                       Manage Documents →
                     </Button>
@@ -336,10 +444,28 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-white">0</p>
-                    <p className="text-gray-400 text-sm">Analyses completed</p>
+                    <p className="text-2xl font-bold text-white">{analysisResults?.summary.keyInsights.length || 0}</p>
+                    <p className="text-gray-400 text-sm">Insights generated</p>
                     <Button variant="ghost" className="mt-2 text-purple-400 hover:text-purple-300">
                       View Analytics →
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer" onClick={() => handleNavigation('chat')}>
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center space-x-2">
+                    <MessageSquare className="h-5 w-5 text-cyan-400" />
+                    <span>Research Chat</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-white">🤖</p>
+                    <p className="text-gray-400 text-sm">AI assistant ready</p>
+                    <Button variant="ghost" className="mt-2 text-cyan-400 hover:text-cyan-300">
+                      Start Chatting →
                     </Button>
                   </div>
                 </CardContent>
