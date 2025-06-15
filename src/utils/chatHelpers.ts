@@ -26,7 +26,7 @@ export const executeChatQuestion = async (question: string, processedFiles: any[
     return data.response || generateIntelligentFallback(question, validFiles);
   } catch (error) {
     console.error('Error executing chat question:', error);
-    return generateIntelligentFallback(question, validFiles);
+    return generateIntelligentFallback(question, processedFiles.filter(f => f.status === 'completed'));
   }
 };
 
