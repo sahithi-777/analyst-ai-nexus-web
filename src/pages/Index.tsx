@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +10,7 @@ import MobileQuickActions from '../components/dashboard/MobileQuickActions';
 import QuickActions from '../components/dashboard/QuickActions';
 import OnboardingFlow from '../components/onboarding/OnboardingFlow';
 import EnhancedUploadArea from '../components/upload/EnhancedUploadArea';
+import WelcomeGuide from '../components/dashboard/WelcomeGuide';
 import { ProcessedFile } from '@/utils/fileProcessor';
 import { useNotifications } from '@/components/ui/notification';
 
@@ -18,6 +18,7 @@ const Index = () => {
   const [hasDocuments, setHasDocuments] = useState(false);
   const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showWelcomeGuide, setShowWelcomeGuide] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { user, loading, demoMode } = useAuth();
@@ -43,8 +44,12 @@ const Index = () => {
 
   useEffect(() => {
     const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+    const hasSeenWelcomeGuide = localStorage.getItem('hasSeenWelcomeGuide');
+    
     if (!hasSeenOnboarding && (user || demoMode)) {
       setShowOnboarding(true);
+    } else if (!hasSeenWelcomeGuide && (user || demoMode)) {
+      setShowWelcomeGuide(true);
     }
   }, [user, demoMode]);
 
@@ -154,6 +159,15 @@ const Index = () => {
     localStorage.setItem('hasSeenOnboarding', 'true');
   };
 
+  const handleWelcomeGuideClose = () => {
+    setShowWelcomeGuide(false);
+    localStorage.setItem('hasSeenWelcomeGuide', 'true');
+  };
+
+  const handleWelcomeGuideGetStarted = () => {
+    setShowUpload(true);
+  };
+
   const handleFilesProcessed = (files: ProcessedFile[]) => {
     setProcessedFiles(prev => {
       const updatedFiles = [...prev];
@@ -183,22 +197,35 @@ const Index = () => {
         hasDocuments={hasDocuments}
       >
         <div className="space-y-6 lg:space-y-8">
-          {/* Welcome Section */}
+          {/* Welcome Section with improved spacing */}
           <div className="mb-6 lg:mb-8">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent mb-3">
-              Research Dashboard
-            </h1>
-            <p className="text-base lg:text-lg text-gray-400 max-w-2xl">
-              Upload documents, analyze content, and generate AI-powered insights with advanced document intelligence.
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent mb-3">
+                  Research Dashboard
+                </h1>
+                <p className="text-base lg:text-lg text-gray-400 max-w-2xl">
+                  Upload documents, analyze content, and generate AI-powered insights with advanced document intelligence.
+                </p>
+              </div>
+              <div className="hidden lg:block">
+                <button
+                  onClick={() => setShowWelcomeGuide(true)}
+                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  Show Guide
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Enhanced Stats Grid */}
           <ResponsiveStatsGrid stats={stats} isMobile={isMobile} />
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
-            {/* Quick Actions */}
-            <div className="xl:col-span-1 order-1 xl:order-1">
+          {/* Improved layout for better responsiveness */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8">
+            {/* Quick Actions - Better responsive sizing */}
+            <div className="xl:col-span-4 2xl:col-span-3 order-1">
               {isMobile ? (
                 <MobileQuickActions
                   onUploadClick={() => handleQuickAction('upload')}
@@ -216,8 +243,8 @@ const Index = () => {
               )}
             </div>
 
-            {/* Main Content Area */}
-            <div className="xl:col-span-2 order-2 xl:order-2">
+            {/* Main Content Area - Adjusted to fill remaining space better */}
+            <div className="xl:col-span-8 2xl:col-span-9 order-2">
               {showUpload ? (
                 <div className="bg-gray-800/50 rounded-xl p-4 lg:p-6 border border-gray-700/50 backdrop-blur-sm">
                   <div className="flex items-center justify-between mb-4 lg:mb-6">
@@ -243,12 +270,20 @@ const Index = () => {
                     <p className="text-sm lg:text-base text-gray-400 mb-6 lg:mb-8 max-w-md mx-auto">
                       Start by uploading documents to analyze, or explore the demo features to see what's possible.
                     </p>
-                    <button
-                      onClick={() => setShowUpload(true)}
-                      className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-3 lg:px-8 lg:py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 shadow-lg touch-manipulation"
-                    >
-                      Get Started
-                    </button>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                      <button
+                        onClick={() => setShowUpload(true)}
+                        className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-3 lg:px-8 lg:py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 shadow-lg touch-manipulation"
+                      >
+                        Get Started
+                      </button>
+                      <button
+                        onClick={() => setShowWelcomeGuide(true)}
+                        className="text-blue-400 hover:text-blue-300 px-6 py-3 rounded-lg transition-colors touch-manipulation"
+                      >
+                        View Guide
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -262,6 +297,13 @@ const Index = () => {
         isOpen={showOnboarding}
         onComplete={handleOnboardingComplete}
         onSkip={handleOnboardingSkip}
+      />
+
+      {/* Welcome Guide */}
+      <WelcomeGuide
+        isOpen={showWelcomeGuide}
+        onClose={handleWelcomeGuideClose}
+        onGetStarted={handleWelcomeGuideGetStarted}
       />
     </>
   );

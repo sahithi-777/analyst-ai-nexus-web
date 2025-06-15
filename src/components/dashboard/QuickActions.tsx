@@ -65,31 +65,41 @@ const QuickActions = ({ onUploadClick, onAnalyzeClick, onExportClick, onNewProje
         </CardTitle>
       </CardHeader>
       <CardContent className="p-3 sm:p-6 pt-0">
-        <div className="grid grid-cols-2 gap-2 sm:gap-4">
+        {/* Responsive grid that adapts to screen size */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2 gap-3 sm:gap-4">
           {actions.map((action) => (
             <Button
               key={action.id}
               onClick={action.onClick}
               className={`
-                group relative h-auto p-3 sm:p-4 bg-gradient-to-br ${action.gradient} 
-                hover:scale-105 transition-all duration-300 hover:shadow-lg
-                border-0 text-white min-h-[80px] sm:min-h-[100px]
+                group relative h-auto p-4 sm:p-5 bg-gradient-to-br ${action.gradient} 
+                hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25
+                border-0 text-white min-h-[100px] sm:min-h-[120px] xl:min-h-[100px] 2xl:min-h-[120px]
+                text-left
               `}
             >
-              <div className="flex flex-col items-center space-y-1 sm:space-y-2 text-center">
-                <div className="p-1.5 sm:p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-                  <action.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+              <div className="flex flex-col items-start space-y-3 w-full">
+                <div className="p-2 sm:p-3 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+                  <action.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
-                <div>
-                  <div className="font-semibold text-xs sm:text-sm leading-tight">{action.title}</div>
-                  <div className="text-xs opacity-90 mt-0.5 sm:mt-1 leading-tight hidden sm:block">{action.description}</div>
+                <div className="flex-1 text-left">
+                  <div className="font-semibold text-sm sm:text-base leading-tight mb-1">{action.title}</div>
+                  <div className="text-xs sm:text-sm opacity-90 leading-tight">{action.description}</div>
                 </div>
               </div>
               
-              {/* Hover glow effect */}
+              {/* Enhanced hover glow effect */}
               <div className="absolute inset-0 rounded-lg bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </Button>
           ))}
+        </div>
+
+        {/* Additional help text for better UX */}
+        <div className="mt-4 pt-4 border-t border-gray-700/50">
+          <p className="text-xs text-gray-400 text-center">
+            💡 Start by uploading documents to unlock AI-powered analysis
+          </p>
         </div>
       </CardContent>
     </Card>
