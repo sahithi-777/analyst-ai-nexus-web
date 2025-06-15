@@ -4,6 +4,9 @@ import { Menu, Bell, Search, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useKeyboardShortcuts, KeyboardShortcutsDialog } from '@/components/ui/keyboard-shortcuts';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { useNotifications } from '@/components/ui/notification';
 import UserAvatar from '../UserAvatar';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -17,6 +20,50 @@ const DashboardLayout = ({ children, sidebar, rightPanel }: DashboardLayoutProps
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const { user, demoMode } = useAuth();
+  const { addNotification } = useNotifications();
+
+  const shortcuts = [
+    {
+      key: 'n',
+      description: 'New Project',
+      action: () => addNotification({
+        type: 'info',
+        title: 'New Project',
+        message: 'Feature coming soon!'
+      })
+    },
+    {
+      key: 'u',
+      description: 'Upload Files',
+      action: () => document.getElementById('enhanced-file-upload')?.click()
+    },
+    {
+      key: 'k',
+      description: 'Search',
+      action: () => document.querySelector('input[placeholder*="Search"]')?.focus()
+    },
+    {
+      key: ',',
+      description: 'Settings',
+      action: () => addNotification({
+        type: 'info',
+        title: 'Settings',
+        message: 'Opening settings panel...'
+      })
+    },
+    {
+      key: 't',
+      description: 'Toggle Theme',
+      action: () => {} // Theme toggle is handled by the ThemeToggle component
+    },
+    {
+      key: 's',
+      description: 'Toggle Sidebar',
+      action: () => setSidebarCollapsed(!sidebarCollapsed)
+    }
+  ];
+
+  const { showShortcuts, setShowShortcuts } = useKeyboardShortcuts(shortcuts);
 
   const getUserName = () => {
     if (demoMode) return 'Demo User';
@@ -54,10 +101,12 @@ const DashboardLayout = ({ children, sidebar, rightPanel }: DashboardLayoutProps
             <div className="hidden md:flex relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search documents..."
+                placeholder="Search documents... (Ctrl+K)"
                 className="pl-10 w-64 bg-gray-800/50 border-gray-700/50 text-white placeholder-gray-400 focus:border-blue-500/50 focus:ring-blue-500/20"
               />
             </div>
+            
+            <ThemeToggle />
             
             <Button variant="ghost" size="sm" className="relative text-gray-400 hover:text-white">
               <Bell className="h-5 w-5" />
@@ -136,6 +185,13 @@ const DashboardLayout = ({ children, sidebar, rightPanel }: DashboardLayoutProps
           {sidebar}
         </div>
       </div>
+
+      {/* Keyboard Shortcuts Dialog */}
+      <KeyboardShortcutsDialog
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+        shortcuts={shortcuts}
+      />
     </div>
   );
 };

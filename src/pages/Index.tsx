@@ -9,12 +9,18 @@ import RightPanel from '../components/RightPanel';
 import MainContent from '../components/MainContent';
 import StatsGrid from '../components/dashboard/StatsGrid';
 import QuickActions from '../components/dashboard/QuickActions';
+import OnboardingFlow from '../components/onboarding/OnboardingFlow';
+import EnhancedUploadArea from '../components/upload/EnhancedUploadArea';
 import { ProcessedFile } from '@/utils/fileProcessor';
+import { useNotifications } from '@/components/ui/notification';
 
 const Index = () => {
   const [hasDocuments, setHasDocuments] = useState(false);
   const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
   const { user, loading, demoMode } = useAuth();
+  const { addNotification } = useNotifications();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,13 +29,19 @@ const Index = () => {
     }
   }, [user, loading, demoMode, navigate]);
 
-  // Simulate document detection
+  useEffect(() => {
+    // Check if user is new (for demo purposes, always show onboarding to new sessions)
+    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+    if (!hasSeenOnboarding && (user || demoMode)) {
+      setShowOnboarding(true);
+    }
+  }, [user, demoMode]);
+
   useEffect(() => {
     const timer = setTimeout(() => setHasDocuments(true), 3000);
     return () => clearTimeout(timer);
   }, []);
 
-  // Show loading while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center">
@@ -43,7 +55,6 @@ const Index = () => {
     );
   }
 
-  // Redirect to auth if not authenticated and not in demo mode
   if (!user && !demoMode) {
     return null;
   }
@@ -77,46 +88,127 @@ const Index = () => {
 
   const handleQuickAction = (action: string) => {
     console.log(`Quick action: ${action}`);
-    // These would typically navigate to specific tabs or trigger actions
+    
+    switch (action) {
+      case 'upload':
+        setShowUpload(true);
+        break;
+      case 'analyze':
+        addNotification({
+          type: 'info',
+          title: 'AI Analysis',
+          message: 'Starting analysis of uploaded documents...'
+        });
+        break;
+      case 'export':
+        addNotification({
+          type: 'success',
+          title: 'Export Started',
+          message: 'Your analysis report is being prepared for download'
+        });
+        break;
+      case 'new-project':
+        addNotification({
+          type: 'info',
+          title: 'New Project',
+          message: 'Creating a new research project...'
+        });
+        break;
+    }
+  };
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('hasSeenOnboarding', 'true');
+    addNotification({
+      type: 'success',
+      title: 'Welcome to AI Research Hub!',
+      message: 'You\'re all set to start analyzing documents'
+    });
+  };
+
+  const handleOnboardingSkip = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('hasSeenOnboarding', 'true');
+  };
+
+  const handleFilesProcessed = (files: ProcessedFile[]) => {
+    setProcessedFiles(prev => {
+      const updatedFiles = [...prev];
+      files.forEach(file => {
+        const existingIndex = updatedFiles.findIndex(f => f.id === file.id);
+        if (existingIndex >= 0) {
+          updatedFiles[existingIndex] = file;
+        } else {
+          updatedFiles.push(file);
+        }
+      });
+      return updatedFiles;
+    });
+    setHasDocuments(true);
   };
 
   return (
-    <DashboardLayout
-      sidebar={<Sidebar isOpen={false} onClose={() => {}} />}
-      rightPanel={<RightPanel hasDocuments={hasDocuments} />}
-    >
-      <div className="space-y-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent mb-3">
-            Research Dashboard
-          </h1>
-          <p className="text-xl text-gray-400 max-w-2xl">
-            Upload documents, analyze content, and generate AI-powered insights with advanced document intelligence.
-          </p>
-        </div>
-
-        {/* Enhanced Stats Grid */}
-        <StatsGrid stats={stats} />
-
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Quick Actions */}
-          <div className="xl:col-span-1">
-            <QuickActions
-              onUploadClick={() => handleQuickAction('upload')}
-              onAnalyzeClick={() => handleQuickAction('analyze')}
-              onExportClick={() => handleQuickAction('export')}
-              onNewProjectClick={() => handleQuickAction('new-project')}
-            />
+    <>
+      <DashboardLayout
+        sidebar={<Sidebar isOpen={false} onClose={() => {}} />}
+        rightPanel={<RightPanel hasDocuments={hasDocuments} />}
+      >
+        <div className="space-y-8">
+          {/* Welcome Section */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent mb-3">
+              Research Dashboard
+            </h1>
+            <p className="text-xl text-gray-400 max-w-2xl">
+              Upload documents, analyze content, and generate AI-powered insights with advanced document intelligence.
+            </p>
           </div>
 
-          {/* Main Content Area */}
-          <div className="xl:col-span-2">
-            <MainContent hasDocuments={hasDocuments} />
+          {/* Enhanced Stats Grid */}
+          <StatsGrid stats={stats} />
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            {/* Quick Actions */}
+            <div className="xl:col-span-1">
+              <QuickActions
+                onUploadClick={() => handleQuickAction('upload')}
+                onAnalyzeClick={() => handleQuickAction('analyze')}
+                onExportClick={() => handleQuickAction('export')}
+                onNewProjectClick={() => handleQuickAction('new-project')}
+              />
+            </div>
+
+            {/* Main Content Area */}
+            <div className="xl:col-span-2">
+              {showUpload ? (
+                <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 backdrop-blur-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-semibold text-white">Upload Documents</h2>
+                    <button
+                      onClick={() => setShowUpload(false)}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <EnhancedUploadArea onFilesProcessed={handleFilesProcessed} />
+                </div>
+              ) : (
+                <MainContent hasDocuments={hasDocuments} />
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </DashboardLayout>
+      </DashboardLayout>
+
+      {/* Onboarding Flow */}
+      <OnboardingFlow
+        isOpen={showOnboarding}
+        onComplete={handleOnboardingComplete}
+        onSkip={handleOnboardingSkip}
+      />
+    </>
   );
 };
 
