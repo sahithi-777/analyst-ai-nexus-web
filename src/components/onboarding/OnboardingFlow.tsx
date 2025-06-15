@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ChevronRight, ChevronLeft, Upload, Brain, BarChart3, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -138,7 +137,7 @@ const OnboardingFlow = ({ isOpen, onComplete, onSkip }: OnboardingFlowProps) => 
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="bg-gray-900 border-gray-800 max-w-2xl" hideCloseButton>
+      <DialogContent className="bg-gray-900 border-gray-800 max-w-2xl">
         <div className="space-y-6">
           {/* Progress */}
           <div className="space-y-2">

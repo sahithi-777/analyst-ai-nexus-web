@@ -40,7 +40,7 @@ const DashboardLayout = ({ children, sidebar, rightPanel }: DashboardLayoutProps
     {
       key: 'k',
       description: 'Search',
-      action: () => document.querySelector('input[placeholder*="Search"]')?.focus()
+      action: () => (document.querySelector('input[placeholder*="Search"]') as HTMLInputElement)?.focus()
     },
     {
       key: ',',

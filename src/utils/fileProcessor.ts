@@ -1,4 +1,3 @@
-
 export interface ProcessedFile {
   id: string;
   name: string;
@@ -11,6 +10,7 @@ export interface ProcessedFile {
     wordCount: number;
     dateExtracted?: string;
     headers?: string[];
+    language?: string;
   };
   status: 'processing' | 'completed' | 'error';
   error?: string;
