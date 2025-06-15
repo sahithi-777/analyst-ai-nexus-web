@@ -20,6 +20,30 @@ const RealDashboard = () => {
   const [initialChatQuestion, setInitialChatQuestion] = useState<string>('');
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { demoMode } = useAuth();
+
+  // Load demo data in demo mode
+  useEffect(() => {
+    if (demoMode) {
+      const loadDemoData = async () => {
+        const { getDemoFiles, getDemoAnalysis, getDemoQuestions } = await import('@/utils/demoData');
+        const demoFiles = getDemoFiles();
+        const demoAnalysisData = getDemoAnalysis();
+        const demoQuestions = getDemoQuestions();
+        
+        setProcessedFiles(demoFiles);
+        setAnalysisResults(demoAnalysisData);
+        setGeneratedQuestions(demoQuestions);
+        
+        toast({
+          title: "Demo Mode Active",
+          description: "Showing sample data. All AI features are simulated.",
+        });
+      };
+      
+      loadDemoData();
+    }
+  }, [demoMode, toast]);
 
   const handleFilesProcessed = (files: RealProcessedFile[]) => {
     setProcessedFiles(files);
@@ -70,9 +94,6 @@ const RealDashboard = () => {
   const completedFiles = processedFiles.filter(f => f.status === 'completed').length;
   const totalInsights = analysisResults?.insights.length || 0;
   const totalConnections = analysisResults?.relationships.length || 0;
-  const avgConfidence = processedFiles.length > 0 
-    ? Math.round(processedFiles.reduce((sum, file) => sum + (file.metadata?.confidenceScore || 0), 0) / processedFiles.length)
-    : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -81,6 +102,7 @@ const RealDashboard = () => {
           <a href="/" className="flex items-center text-white font-semibold text-xl">
             <Brain className="h-6 w-6 mr-2 text-cyan-400" />
             AI Research Hub
+            {demoMode && <span className="ml-2 text-xs bg-yellow-500 text-black px-2 py-1 rounded">DEMO</span>}
           </a>
           <div className="flex items-center space-x-4">
             <nav className="space-x-4">

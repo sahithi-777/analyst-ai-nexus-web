@@ -1,239 +1,322 @@
 
-import React, { useCallback, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, Loader2, CheckCircle, AlertCircle, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Upload, FileText, X, Link, AlertCircle, CheckCircle, File, FileImage, FileSpreadsheet, Eye, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { RealProcessedFile, RealAiProcessor } from '@/utils/realAiProcessor';
 
-interface RealUploadAreaProps {
-  onFilesProcessed: (files: RealProcessedFile[]) => void;
-  maxFiles?: number;
-  maxSize?: number;
+interface UploadedFile {
+  id: string;
+  file?: File;
+  url?: string;
+  name: string;
+  size?: number;
+  type: string;
+  progress: number;
+  status: 'uploading' | 'processing' | 'completed' | 'error';
+  error?: string;
+  processedData?: RealProcessedFile;
 }
 
-const RealUploadArea = ({ onFilesProcessed, maxFiles = 5, maxSize = 10 * 1024 * 1024 }: RealUploadAreaProps) => {
-  const [uploadedFiles, setUploadedFiles] = useState<RealProcessedFile[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingProgress, setProcessingProgress] = useState(0);
+interface RealUploadAreaProps {
+  onFilesProcessed?: (files: RealProcessedFile[]) => void;
+}
+
+const RealUploadArea = ({ onFilesProcessed }: RealUploadAreaProps) => {
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [processedFiles, setProcessedFiles] = useState<RealProcessedFile[]>([]);
+  const [urlInput, setUrlInput] = useState('');
   const { toast } = useToast();
 
-  const processFiles = async (files: File[]) => {
-    setIsProcessing(true);
-    setProcessingProgress(0);
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const ACCEPTED_FILE_TYPES = ['.pdf', '.csv', '.txt', '.docx', '.doc'];
+
+  const getFileIcon = (type: string) => {
+    if (type.includes('pdf')) return FileText;
+    if (type.includes('csv') || type.includes('excel')) return FileSpreadsheet;
+    if (type.includes('image')) return FileImage;
+    if (type === 'url') return Link;
+    return File;
+  };
+
+  const validateFile = (file: File): string | null => {
+    if (file.size > MAX_FILE_SIZE) {
+      return `File size exceeds 10MB limit`;
+    }
     
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!ACCEPTED_FILE_TYPES.includes(fileExtension)) {
+      return `File type not supported. Allowed types: ${ACCEPTED_FILE_TYPES.join(', ')}`;
+    }
+    
+    return null;
+  };
+
+  const processAndUploadFile = async (fileId: string, file: File): Promise<void> => {
     try {
-      const newProcessedFiles: RealProcessedFile[] = [];
+      setUploadedFiles(prev => 
+        prev.map(f => f.id === fileId ? { ...f, status: 'processing', progress: 50 } : f)
+      );
+
+      const processedData = await RealAiProcessor.processFile(file);
       
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        setProcessingProgress(((i + 1) / files.length) * 100);
+      setUploadedFiles(prev => 
+        prev.map(f => f.id === fileId ? { 
+          ...f, 
+          status: processedData.status === 'error' ? 'error' : 'completed',
+          progress: 100,
+          processedData,
+          error: processedData.error
+        } : f)
+      );
+
+      if (processedData.status === 'completed') {
+        const updatedFiles = [...processedFiles, processedData];
+        setProcessedFiles(updatedFiles);
+        onFilesProcessed?.(updatedFiles);
         
-        try {
-          const processedFile = await RealAiProcessor.processFile(file);
-          newProcessedFiles.push(processedFile);
-          
-          toast({
-            title: "File Processed",
-            description: `${file.name} has been analyzed by Claude AI`,
-          });
-        } catch (error) {
-          console.error(`Error processing ${file.name}:`, error);
-          toast({
-            title: "Processing Error",
-            description: `Failed to process ${file.name}`,
-            variant: "destructive"
-          });
-        }
+        toast({
+          title: "File Processed Successfully",
+          description: `${file.name} has been processed and is ready for analysis.`,
+        });
+      } else {
+        toast({
+          title: "Processing Failed",
+          description: `Failed to process ${file.name}: ${processedData.error}`,
+          variant: "destructive"
+        });
       }
+    } catch (error) {
+      setUploadedFiles(prev => 
+        prev.map(f => f.id === fileId ? { 
+          ...f, 
+          status: 'error', 
+          error: error instanceof Error ? error.message : 'Processing failed' 
+        } : f)
+      );
       
-      const updatedFiles = [...uploadedFiles, ...newProcessedFiles];
-      setUploadedFiles(updatedFiles);
-      onFilesProcessed(updatedFiles);
-      
-    } finally {
-      setIsProcessing(false);
-      setProcessingProgress(0);
+      toast({
+        title: "Processing Error",
+        description: `An error occurred while processing ${file.name}`,
+        variant: "destructive"
+      });
     }
   };
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    if (uploadedFiles.length + acceptedFiles.length > maxFiles) {
-      toast({
-        title: "Too Many Files",
-        description: `Maximum ${maxFiles} files allowed`,
-        variant: "destructive"
-      });
-      return;
+  const handleFiles = async (files: File[]) => {
+    const newFiles: UploadedFile[] = [];
+    
+    for (const file of files) {
+      const validation = validateFile(file);
+      const fileId = `file-${Date.now()}-${Math.random()}`;
+      
+      if (validation) {
+        newFiles.push({
+          id: fileId,
+          file,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          progress: 0,
+          status: 'error',
+          error: validation
+        });
+        toast({
+          title: "Upload Error",
+          description: `${file.name}: ${validation}`,
+          variant: "destructive"
+        });
+      } else {
+        newFiles.push({
+          id: fileId,
+          file,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          progress: 0,
+          status: 'uploading'
+        });
+      }
     }
-
-    const oversizedFiles = acceptedFiles.filter(file => file.size > maxSize);
-    if (oversizedFiles.length > 0) {
-      toast({
-        title: "File Too Large",
-        description: `Files must be smaller than ${Math.round(maxSize / 1024 / 1024)}MB`,
-        variant: "destructive"
+    
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+    
+    newFiles
+      .filter(f => f.status === 'uploading' && f.file)
+      .forEach(async (uploadFile) => {
+        await processAndUploadFile(uploadFile.id, uploadFile.file!);
       });
-      return;
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    handleFiles(files);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      handleFiles(files);
     }
+  };
 
-    await processFiles(acceptedFiles);
-  }, [uploadedFiles.length, maxFiles, maxSize, toast]);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'text/plain': ['.txt'],
-      'application/pdf': ['.pdf'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'text/markdown': ['.md']
-    },
-    disabled: isProcessing
-  });
-
-  const removeFile = (fileId: string) => {
-    const updatedFiles = uploadedFiles.filter(f => f.id !== fileId);
-    setUploadedFiles(updatedFiles);
-    onFilesProcessed(updatedFiles);
+  const removeFile = (id: string) => {
+    const fileToRemove = uploadedFiles.find(f => f.id === id);
+    setUploadedFiles(prev => prev.filter(f => f.id !== id));
+    
+    if (fileToRemove?.processedData) {
+      const updatedFiles = processedFiles.filter(f => f.id !== fileToRemove.processedData!.id);
+      setProcessedFiles(updatedFiles);
+      onFilesProcessed?.(updatedFiles);
+    }
     
     toast({
       title: "File Removed",
-      description: "File has been removed from analysis"
+      description: "File has been removed from the upload list.",
     });
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-400" />;
-      case 'processing':
-        return <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />;
-      case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-400" />;
-      default:
-        return <FileText className="h-4 w-4 text-gray-400" />;
-    }
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '';
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
     <div className="space-y-6">
-      {/* Upload Area */}
-      <Card className="bg-gray-800 border-gray-700">
-        <CardContent className="p-6">
-          <div
-            {...getRootProps()}
-            className={`
-              border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-              ${isDragActive 
-                ? 'border-blue-400 bg-blue-500/10' 
-                : 'border-gray-600 hover:border-gray-500'
-              }
-              ${isProcessing ? 'pointer-events-none opacity-50' : ''}
-            `}
-          >
-            <input {...getInputProps()} />
-            
-            {isProcessing ? (
-              <div className="space-y-4">
-                <Loader2 className="h-12 w-12 text-blue-400 mx-auto animate-spin" />
-                <div>
-                  <p className="text-white font-medium">Processing with Claude AI...</p>
-                  <p className="text-gray-400 text-sm mt-1">Extracting and analyzing document content</p>
-                </div>
-                <div className="max-w-xs mx-auto">
-                  <Progress value={processingProgress} className="h-2" />
-                  <p className="text-xs text-gray-400 mt-1">{Math.round(processingProgress)}% complete</p>
-                </div>
-              </div>
-            ) : isDragActive ? (
-              <div className="space-y-4">
-                <Upload className="h-12 w-12 text-blue-400 mx-auto" />
-                <div>
-                  <p className="text-white font-medium">Drop files here</p>
-                  <p className="text-gray-400 text-sm">Files will be processed by Claude AI</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <Upload className="h-12 w-12 text-gray-400 mx-auto" />
-                <div>
-                  <p className="text-white font-medium">Upload Documents for AI Analysis</p>
-                  <p className="text-gray-400 text-sm mt-1">
-                    Drag and drop files here, or click to select
-                  </p>
-                  <p className="text-gray-500 text-xs mt-2">
-                    Supports: PDF, DOCX, TXT, MD • Max {maxFiles} files • {Math.round(maxSize / 1024 / 1024)}MB each
-                  </p>
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                >
-                  Select Files
-                </Button>
-              </div>
-            )}
+      {/* Upload Zone */}
+      <div
+        className={`
+          relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300
+          ${isDragOver 
+            ? 'border-blue-500 bg-blue-500/10 scale-[1.02]' 
+            : 'border-gray-600 hover:border-gray-500 hover:bg-gray-800/30'
+          }
+        `}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <div className="space-y-4">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
+            <Upload className="h-8 w-8 text-white" />
           </div>
-        </CardContent>
-      </Card>
+          
+          <div>
+            <h3 className="text-xl font-semibold text-white mb-2">Upload Research Documents</h3>
+            <p className="text-gray-400 mb-3">
+              Drag and drop files or click to browse
+            </p>
+            <p className="text-sm text-gray-500">
+              Supports PDF, CSV, TXT, DOCX files up to 10MB each
+            </p>
+          </div>
 
-      {/* Uploaded Files List */}
+          <Button
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+            onClick={() => document.getElementById('file-upload')?.click()}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Choose Files
+          </Button>
+        </div>
+
+        <input
+          id="file-upload"
+          type="file"
+          multiple
+          accept={ACCEPTED_FILE_TYPES.join(',')}
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+      </div>
+
+      {/* File List */}
       {uploadedFiles.length > 0 && (
-        <Card className="bg-gray-800 border-gray-700">
-          <CardContent className="p-6">
-            <h3 className="text-white font-medium mb-4">
-              Processed Documents ({uploadedFiles.length}/{maxFiles})
-            </h3>
-            
-            <div className="space-y-3">
-              {uploadedFiles.map((file) => (
-                <div key={file.id} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <h4 className="text-white font-medium mb-4">Uploaded Files ({uploadedFiles.length})</h4>
+          <div className="space-y-3 max-h-64 overflow-y-auto">
+            {uploadedFiles.map((uploadedFile) => {
+              const IconComponent = getFileIcon(uploadedFile.type);
+              return (
+                <div
+                  key={uploadedFile.id}
+                  className="flex items-center justify-between p-3 bg-gray-700 rounded-lg group hover:bg-gray-600 transition-colors"
+                >
                   <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    {getStatusIcon(file.status)}
+                    <div className="flex-shrink-0">
+                      {uploadedFile.status === 'completed' && (
+                        <CheckCircle className="h-5 w-5 text-green-400" />
+                      )}
+                      {uploadedFile.status === 'error' && (
+                        <AlertCircle className="h-5 w-5 text-red-400" />
+                      )}
+                      {uploadedFile.status === 'processing' && (
+                        <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
+                      )}
+                      {uploadedFile.status === 'uploading' && (
+                        <IconComponent className="h-5 w-5 text-blue-400" />
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-medium truncate">{file.name}</p>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <span className="text-gray-400 text-xs">
-                          {file.metadata.wordCount} words
-                        </span>
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs ${
-                            file.status === 'completed' ? 'border-green-400 text-green-400' :
-                            file.status === 'error' ? 'border-red-400 text-red-400' :
-                            'border-blue-400 text-blue-400'
-                          }`}
-                        >
-                          {file.metadata.topic}
-                        </Badge>
-                        {file.status === 'completed' && (
-                          <Badge variant="outline" className="text-xs border-cyan-400 text-cyan-400">
-                            {file.metadata.confidenceScore}% confidence
-                          </Badge>
+                      <p className="text-sm font-medium text-white truncate">
+                        {uploadedFile.name}
+                      </p>
+                      <div className="flex items-center space-x-2 text-xs">
+                        {uploadedFile.size && (
+                          <span className="text-gray-400">{formatFileSize(uploadedFile.size)}</span>
+                        )}
+                        {uploadedFile.status === 'processing' && (
+                          <span className="text-blue-400">Processing with Claude...</span>
+                        )}
+                        {uploadedFile.status === 'completed' && uploadedFile.processedData && (
+                          <span className="text-green-400">
+                            {uploadedFile.processedData.metadata.wordCount} words • Ready for analysis
+                          </span>
+                        )}
+                        {uploadedFile.status === 'error' && uploadedFile.error && (
+                          <span className="text-red-400">{uploadedFile.error}</span>
                         )}
                       </div>
-                      {file.error && (
-                        <p className="text-red-400 text-xs mt-1">{file.error}</p>
+                      {(uploadedFile.status === 'uploading' || uploadedFile.status === 'processing') && (
+                        <div className="mt-2">
+                          <Progress value={uploadedFile.progress} className="h-2 bg-gray-600" />
+                        </div>
                       )}
                     </div>
                   </div>
-                  
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeFile(file.id)}
-                    className="text-gray-400 hover:text-red-400 ml-2"
+                    onClick={() => removeFile(uploadedFile.id)}
+                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all"
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

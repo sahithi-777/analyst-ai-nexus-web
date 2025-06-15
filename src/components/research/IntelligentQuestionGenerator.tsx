@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lightbulb, Play, RefreshCw, Loader2, Download, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { RealProcessedFile } from '@/utils/realAiProcessor';
 import { supabase } from '@/integrations/supabase/client';
 import { executeChatQuestion } from '@/utils/chatHelpers';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ResearchQuestion {
   question: string;
@@ -35,11 +36,26 @@ const IntelligentQuestionGenerator = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const { toast } = useToast();
+  const { demoMode } = useAuth();
 
   const hasValidFiles = processedFiles.filter(f => f.status === 'completed').length > 0;
 
+  // Load demo questions in demo mode
+  useEffect(() => {
+    if (demoMode) {
+      const loadDemoQuestions = async () => {
+        const { getDemoQuestions } = await import('@/utils/demoData');
+        const demoQuestions = getDemoQuestions();
+        setQuestions(demoQuestions);
+        onQuestionsGenerated?.(demoQuestions);
+      };
+      
+      loadDemoQuestions();
+    }
+  }, [demoMode, onQuestionsGenerated]);
+
   const generateQuestions = async (includeUrl = false) => {
-    if (!hasValidFiles && !includeUrl) {
+    if (!hasValidFiles && !includeUrl && !demoMode) {
       toast({
         title: "No Documents",
         description: "Upload and process documents first to generate research questions.",
@@ -53,6 +69,20 @@ const IntelligentQuestionGenerator = ({
     try {
       const validFiles = processedFiles.filter(f => f.status === 'completed');
       
+      // In demo mode, return demo questions
+      if (demoMode) {
+        const { getDemoQuestions } = await import('@/utils/demoData');
+        const demoQuestions = getDemoQuestions();
+        setQuestions(demoQuestions);
+        onQuestionsGenerated?.(demoQuestions);
+        
+        toast({
+          title: "Demo Questions Generated",
+          description: `Generated ${demoQuestions.length} sample research questions for demonstration.`,
+        });
+        return;
+      }
+      
       const { data, error } = await supabase.functions.invoke('generate-research-questions', {
         body: {
           files: validFiles,
@@ -62,7 +92,18 @@ const IntelligentQuestionGenerator = ({
 
       if (error) {
         console.error('Error generating questions:', error);
-        throw error;
+        
+        // Fallback to demo questions on error
+        const { getDemoQuestions } = await import('@/utils/demoData');
+        const fallbackQuestions = getDemoQuestions();
+        setQuestions(fallbackQuestions);
+        onQuestionsGenerated?.(fallbackQuestions);
+        
+        toast({
+          title: "Using Demo Questions",
+          description: "API unavailable. Showing sample questions for demonstration.",
+        });
+        return;
       }
 
       const generatedQuestions = data.questions || [];
@@ -76,10 +117,16 @@ const IntelligentQuestionGenerator = ({
 
     } catch (error) {
       console.error('Error generating questions:', error);
+      
+      // Fallback to demo questions on error
+      const { getDemoQuestions } = await import('@/utils/demoData');
+      const fallbackQuestions = getDemoQuestions();
+      setQuestions(fallbackQuestions);
+      onQuestionsGenerated?.(fallbackQuestions);
+      
       toast({
-        title: "Generation Failed",
-        description: "Failed to generate research questions. Please try again.",
-        variant: "destructive"
+        title: "Using Demo Questions",
+        description: "Unable to connect to AI service. Showing sample questions.",
       });
     } finally {
       setIsGenerating(false);
@@ -165,6 +212,7 @@ const IntelligentQuestionGenerator = ({
                 <h3 className="text-lg font-semibold">AI Research Question Generator</h3>
                 <p className="text-sm text-gray-400 font-normal mt-1">
                   Generate intelligent research questions from your documents using Claude AI
+                  {demoMode && <span className="text-yellow-400"> (Demo Mode)</span>}
                 </p>
               </div>
             </div>
@@ -184,40 +232,42 @@ const IntelligentQuestionGenerator = ({
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1">
-              <Input
-                placeholder="Optional: Add URL for additional context"
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white placeholder-gray-400"
-              />
-            </div>
-            <Button
-              onClick={() => generateQuestions(false)}
-              disabled={!hasValidFiles || isGenerating}
-              className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white"
-            >
-              {isGenerating ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Play className="h-4 w-4 mr-2" />
-              )}
-              Generate Questions
-            </Button>
-            {urlInput && (
+          {!demoMode && (
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <Input
+                  placeholder="Optional: Add URL for additional context"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  className="bg-gray-900 border-gray-600 text-white placeholder-gray-400"
+                />
+              </div>
               <Button
-                onClick={() => generateQuestions(true)}
-                disabled={isGenerating}
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                onClick={() => generateQuestions(false)}
+                disabled={!hasValidFiles || isGenerating}
+                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white"
               >
-                Include URL
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Play className="h-4 w-4 mr-2" />
+                )}
+                Generate Questions
               </Button>
-            )}
-          </div>
+              {urlInput && (
+                <Button
+                  onClick={() => generateQuestions(true)}
+                  disabled={isGenerating}
+                  variant="outline"
+                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                >
+                  Include URL
+                </Button>
+              )}
+            </div>
+          )}
 
-          {!hasValidFiles && (
+          {!hasValidFiles && !demoMode && (
             <div className="text-center py-6 bg-gray-900 rounded-lg border border-gray-600">
               <Lightbulb className="h-10 w-10 text-gray-600 mx-auto mb-3" />
               <h4 className="text-white font-medium mb-2">Ready to Generate Questions</h4>

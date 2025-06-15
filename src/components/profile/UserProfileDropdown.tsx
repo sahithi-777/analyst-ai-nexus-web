@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { User, Settings, LogOut, HelpCircle } from 'lucide-react';
+import { User, Settings, LogOut, TestTube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,87 +9,66 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UserProfileDropdownProps {
-  onNavigateToProfile?: () => void;
+  onNavigateToProfile: () => void;
 }
 
 const UserProfileDropdown = ({ onNavigateToProfile }: UserProfileDropdownProps) => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  const { user, demoMode, setDemoMode, signOut } = useAuth();
 
-  const handleProfileClick = () => {
-    if (onNavigateToProfile) {
-      onNavigateToProfile();
-    } else {
-      navigate('/profile');
-    }
+  const handleSignOut = async () => {
+    await signOut();
   };
 
-  const handleLogout = () => {
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
+  const toggleDemoMode = () => {
+    setDemoMode(!demoMode);
   };
 
-  const handleHelp = () => {
-    toast({
-      title: "Help Center",
-      description: "Opening help documentation...",
-    });
-  };
+  const userEmail = user?.email || 'Demo User';
+  const displayName = user?.user_metadata?.full_name || userEmail;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder.svg" alt="User" />
-            <AvatarFallback className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
-              JD
-            </AvatarFallback>
-          </Avatar>
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
+            <User className="h-4 w-4 text-white" />
+          </div>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 bg-gray-800 border-gray-700" align="end" forceMount>
         <div className="flex items-center justify-start gap-2 p-2">
           <div className="flex flex-col space-y-1 leading-none">
-            <p className="font-medium text-white">John Doe</p>
+            <p className="font-medium text-white">{displayName}</p>
             <p className="w-[200px] truncate text-sm text-gray-400">
-              john.doe@example.com
+              {userEmail}
             </p>
+            {demoMode && (
+              <p className="text-xs text-yellow-400">Demo Mode</p>
+            )}
           </div>
         </div>
         <DropdownMenuSeparator className="bg-gray-700" />
         <DropdownMenuItem 
-          onClick={handleProfileClick}
-          className="text-gray-300 hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
-        >
-          <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={handleProfileClick}
-          className="text-gray-300 hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+          onClick={onNavigateToProfile}
+          className="text-gray-300 hover:text-white hover:bg-gray-700"
         >
           <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
+          <span>Profile Settings</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
-          onClick={handleHelp}
-          className="text-gray-300 hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+          onClick={toggleDemoMode}
+          className="text-gray-300 hover:text-white hover:bg-gray-700"
         >
-          <HelpCircle className="mr-2 h-4 w-4" />
-          <span>Help</span>
+          <TestTube className="mr-2 h-4 w-4" />
+          <span>{demoMode ? 'Exit Demo' : 'Demo Mode'}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-gray-700" />
         <DropdownMenuItem 
-          onClick={handleLogout}
-          className="text-gray-300 hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+          onClick={handleSignOut}
+          className="text-gray-300 hover:text-white hover:bg-gray-700"
         >
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
