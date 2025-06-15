@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, MoreVertical, Trash2, Minimize2, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -92,7 +93,7 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
     } catch (error) {
       console.error('Error in AI response:', error);
       addNotification({
-        type: 'destructive',
+        type: 'error',
         title: 'Error',
         message: 'Failed to get AI response. Please try again.'
       });

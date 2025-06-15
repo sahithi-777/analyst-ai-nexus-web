@@ -6,14 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications } from '@/components/ui/notification';
-import ChatInterface from './ChatInterface';
+import AdvancedChatInterface from './chat/AdvancedChatInterface';
 
 interface RightPanelProps {
   hasDocuments: boolean;
 }
 
 const RightPanel = ({ hasDocuments }: RightPanelProps) => {
-  const [showChat, setShowChat] = useState(true);
   const { addNotification } = useNotifications();
 
   const quickInsights = [
@@ -28,16 +27,6 @@ const RightPanel = ({ hasDocuments }: RightPanelProps) => {
     { type: 'export', name: 'Data exported to CSV', time: '1d ago', icon: Download },
     { type: 'share', name: 'Analysis shared', time: '2d ago', icon: Share },
   ];
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'analysis': return BarChart3;
-      case 'document': return FileText;
-      case 'export': return Download;
-      case 'share': return Share;
-      default: return Eye;
-    }
-  };
 
   const getActivityColor = (type: string) => {
     switch (type) {
@@ -130,7 +119,7 @@ const RightPanel = ({ hasDocuments }: RightPanelProps) => {
         <ScrollArea className="h-32">
           <div className="space-y-3">
             {recentActivity.map((activity, index) => {
-              const IconComponent = getActivityIcon(activity.type);
+              const IconComponent = activity.icon;
               return (
                 <div key={index} className="flex items-start space-x-3">
                   <IconComponent className={`h-4 w-4 mt-0.5 ${getActivityColor(activity.type)}`} />
@@ -145,10 +134,13 @@ const RightPanel = ({ hasDocuments }: RightPanelProps) => {
         </ScrollArea>
       </div>
 
-      {/* Chat Interface */}
+      {/* Advanced Chat Interface */}
       <div className="flex-1 p-4 min-h-0">
         <div className="h-full">
-          <ChatInterface hasDocuments={hasDocuments} isEmbedded={true} />
+          <AdvancedChatInterface 
+            hasDocuments={hasDocuments} 
+            documents={['Research_Methods_2024.pdf', 'Analysis_Framework.docx', 'Implementation_Plan.pdf']}
+          />
         </div>
       </div>
     </div>
