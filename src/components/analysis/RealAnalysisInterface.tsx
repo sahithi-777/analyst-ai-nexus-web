@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { RealProcessedFile, RealAnalysisResult, RealAiProcessor } from '@/utils/realAiProcessor';
-import AnalysisResults from '../AnalysisResults';
+import RealAnalysisResults from './RealAnalysisResults';
 
 interface RealAnalysisInterfaceProps {
   processedFiles: RealProcessedFile[];
@@ -232,7 +232,7 @@ const RealAnalysisInterface = ({ processedFiles, onAnalysisComplete }: RealAnaly
       </Card>
 
       {analysisResults && (
-        <AnalysisResults results={analysisResults} />
+        <RealAnalysisResults results={analysisResults} />
       )}
     </div>
   );
