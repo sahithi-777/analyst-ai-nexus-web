@@ -10,6 +10,7 @@ function App() {
       <div className="min-h-screen">
         <Routes>
           <Route path="/" element={<RealIndex />} />
+          <Route path="/dashboard" element={<RealIndex />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
         <Toaster />
