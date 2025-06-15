@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BarChart, FileText, Brain, TrendingUp, Upload, Settings, Share, Eye, Trash2, Download, Search, MoreVertical } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -53,7 +52,6 @@ const MainContent = () => {
     doc.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // Simulate file upload detection
   React.useEffect(() => {
     const timer = setTimeout(() => setHasUploadedFiles(true), 3000);
     return () => clearTimeout(timer);
@@ -61,7 +59,6 @@ const MainContent = () => {
 
   const handleStartTour = () => {
     setShowWelcome(false);
-    // Implement guided tour logic
   };
 
   const handleDocumentClick = (doc: any) => {
@@ -93,7 +90,9 @@ const MainContent = () => {
     return (
       <>
         <main className="flex-1 p-6 bg-gray-950">
-          <LoadingSkeleton type="dashboard" />
+          <div className="max-w-6xl mx-auto">
+            <LoadingSkeleton type="dashboard" />
+          </div>
         </main>
         <Welcome 
           onClose={() => setShowWelcome(false)} 
@@ -106,7 +105,9 @@ const MainContent = () => {
   if (isLoading) {
     return (
       <main className="flex-1 p-6 bg-gray-950">
-        <LoadingSkeleton type="dashboard" />
+        <div className="max-w-6xl mx-auto">
+          <LoadingSkeleton type="dashboard" />
+        </div>
       </main>
     );
   }
@@ -114,8 +115,9 @@ const MainContent = () => {
   return (
     <>
       <main className="flex-1 p-6 bg-gray-950">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Header Section */}
+          <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white mb-2">Research Dashboard</h2>
               <p className="text-gray-400">Analyze documents, generate insights, and track research progress</p>
@@ -141,9 +143,9 @@ const MainContent = () => {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat, index) => (
-              <Card key={index} className="bg-gray-900 border-gray-800 hover:bg-gray-800 transition-colors cursor-pointer">
+              <Card key={index} className="bg-gray-900 border-gray-800 hover:bg-gray-800 transition-colors cursor-pointer shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -160,7 +162,7 @@ const MainContent = () => {
           </div>
 
           {/* Analysis History */}
-          <Card className="bg-gray-900 border-gray-800 mb-8">
+          <Card className="bg-gray-900 border-gray-800 shadow-lg">
             <CardHeader>
               <CardTitle className="text-white flex items-center justify-between">
                 <div className="flex items-center">
@@ -214,7 +216,7 @@ const MainContent = () => {
           </Card>
 
           {/* Document Management */}
-          <Card className="bg-gray-900 border-gray-800 mb-8">
+          <Card className="bg-gray-900 border-gray-800 shadow-lg">
             <CardHeader>
               <CardTitle className="text-white flex items-center justify-between">
                 <div className="flex items-center">
@@ -315,97 +317,75 @@ const MainContent = () => {
           </Card>
 
           {/* Tabbed Interface */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-gray-900 border-gray-800">
-              <TabsTrigger 
-                value="upload" 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Upload & Process
-              </TabsTrigger>
-              <TabsTrigger 
-                value="analysis"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
-              >
-                <Brain className="h-4 w-4 mr-2" />
-                AI Analysis
-              </TabsTrigger>
-              <TabsTrigger 
-                value="reports"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Reports
-              </TabsTrigger>
-              <TabsTrigger 
-                value="insights"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
-              >
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Insights
-              </TabsTrigger>
-            </TabsList>
+          <Card className="bg-gray-900 border-gray-800 shadow-lg">
+            <CardContent className="p-0">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <div className="border-b border-gray-800 px-6 pt-6">
+                  <TabsList className="bg-gray-800 border-gray-700">
+                    <TabsTrigger 
+                      value="upload" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload & Process
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="analysis"
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
+                    >
+                      <Brain className="h-4 w-4 mr-2" />
+                      AI Analysis
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="reports"
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Reports
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="insights"
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
+                    >
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Insights
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
 
-            <TabsContent value="upload" className="space-y-6">
-              <UploadArea />
-              <AnalysisInterface hasUploadedFiles={hasUploadedFiles} />
-            </TabsContent>
+                <div className="p-6">
+                  <TabsContent value="upload" className="mt-0 space-y-6">
+                    <UploadArea />
+                    <AnalysisInterface hasUploadedFiles={hasUploadedFiles} />
+                  </TabsContent>
 
-            <TabsContent value="analysis" className="space-y-6">
-              <Card className="bg-gray-900 border-gray-800">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Brain className="h-5 w-5 mr-2 text-cyan-400" />
-                    AI Analysis Results
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <Brain className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-white mb-2">No Analysis Available</h3>
-                    <p className="text-gray-400">Upload documents to start AI-powered analysis</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                  <TabsContent value="analysis" className="mt-0">
+                    <div className="text-center py-12">
+                      <Brain className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-white mb-2">No Analysis Available</h3>
+                      <p className="text-gray-400">Upload documents to start AI-powered analysis</p>
+                    </div>
+                  </TabsContent>
 
-            <TabsContent value="reports" className="space-y-6">
-              <Card className="bg-gray-900 border-gray-800">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <FileText className="h-5 w-5 mr-2 text-blue-400" />
-                    Generated Reports
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <FileText className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-white mb-2">No Reports Generated</h3>
-                    <p className="text-gray-400">Process documents to generate comprehensive reports</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                  <TabsContent value="reports" className="mt-0">
+                    <div className="text-center py-12">
+                      <FileText className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-white mb-2">No Reports Generated</h3>
+                      <p className="text-gray-400">Process documents to generate comprehensive reports</p>
+                    </div>
+                  </TabsContent>
 
-            <TabsContent value="insights" className="space-y-6">
-              <Card className="bg-gray-900 border-gray-800">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <TrendingUp className="h-5 w-5 mr-2 text-green-400" />
-                    Key Insights & Trends
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <TrendingUp className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-white mb-2">No Insights Available</h3>
-                    <p className="text-gray-400">Analyze documents to discover key insights and trends</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                  <TabsContent value="insights" className="mt-0">
+                    <div className="text-center py-12">
+                      <TrendingUp className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-white mb-2">No Insights Available</h3>
+                      <p className="text-gray-400">Analyze documents to discover key insights and trends</p>
+                    </div>
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </CardContent>
+          </Card>
         </div>
       </main>
 

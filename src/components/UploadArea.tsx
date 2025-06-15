@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Upload, FileText, X, Link, AlertCircle, CheckCircle, File, FileImage, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -107,7 +106,6 @@ const UploadArea = () => {
     
     setUploadedFiles(prev => [...prev, ...newFiles]);
     
-    // Start uploads for valid files
     newFiles
       .filter(f => f.status === 'uploading')
       .forEach(async (file) => {
@@ -173,7 +171,6 @@ const UploadArea = () => {
       setUploadedFiles(prev => [...prev, newUrlFile]);
       setUrlInput('');
       
-      // Simulate URL processing
       simulateUpload(urlId).then(() => {
         toast({
           title: "URL Added",
@@ -208,46 +205,44 @@ const UploadArea = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Main Upload Zone */}
+    <div className="space-y-4">
+      {/* Main Upload Zone - More Compact */}
       <div
         className={`
-          relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300
+          relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 max-h-64
           ${isDragOver 
-            ? 'border-blue-500 bg-blue-500/10 scale-105' 
-            : 'border-gray-600 hover:border-gray-500 hover:bg-gray-800/50'
+            ? 'border-blue-500 bg-blue-500/10 scale-[1.02]' 
+            : 'border-gray-600 hover:border-gray-500 hover:bg-gray-800/30'
           }
         `}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div className="space-y-6">
-          <div className="mx-auto w-20 h-20 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-            <Upload className="h-10 w-10 text-white" />
+        <div className="space-y-4">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
+            <Upload className="h-8 w-8 text-white" />
           </div>
           
           <div>
-            <h3 className="text-2xl font-semibold text-white mb-3">
+            <h3 className="text-xl font-semibold text-white mb-2">
               Upload Research Documents
             </h3>
-            <p className="text-gray-400 mb-4">
+            <p className="text-gray-400 text-sm mb-3">
               Drag and drop your files here, or click to browse
             </p>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-xs text-gray-500 mb-4">
               Supports PDF, CSV, TXT, DOCX, XLSX files up to 10MB each
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 py-3"
-              onClick={() => document.getElementById('file-upload')?.click()}
-            >
-              <Upload className="h-5 w-5 mr-2" />
-              Choose Files
-            </Button>
-          </div>
+          <Button
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-2"
+            onClick={() => document.getElementById('file-upload')?.click()}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Choose Files
+          </Button>
         </div>
 
         <input
@@ -260,13 +255,13 @@ const UploadArea = () => {
         />
       </div>
 
-      {/* URL Input Section */}
-      <div className="bg-gray-800 rounded-lg p-6">
-        <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
-          <Link className="h-5 w-5 mr-2 text-cyan-400" />
-          Add URL for Analysis
-        </h4>
-        <div className="flex gap-3">
+      {/* URL Input Section - More Compact and Inline */}
+      <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            <Link className="h-5 w-5 text-cyan-400" />
+            <span className="text-white font-medium">Add URL:</span>
+          </div>
           <Input
             type="url"
             placeholder="https://example.com/article"
@@ -277,24 +272,24 @@ const UploadArea = () => {
           />
           <Button
             onClick={handleUrlAdd}
-            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6"
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-4 py-2 flex-shrink-0"
           >
-            Add URL
+            Add
           </Button>
         </div>
       </div>
 
       {/* Uploaded Files List */}
       {uploadedFiles.length > 0 && (
-        <div className="bg-gray-800 rounded-lg p-6">
-          <h4 className="text-lg font-semibold text-white mb-4">Uploaded Files</h4>
-          <div className="space-y-3">
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <h4 className="text-lg font-semibold text-white mb-4">Uploaded Files ({uploadedFiles.length})</h4>
+          <div className="space-y-3 max-h-64 overflow-y-auto">
             {uploadedFiles.map((uploadedFile) => {
               const IconComponent = getFileIcon(uploadedFile.type);
               return (
                 <div
                   key={uploadedFile.id}
-                  className="flex items-center justify-between p-4 bg-gray-700 rounded-lg group hover:bg-gray-600 transition-colors"
+                  className="flex items-center justify-between p-3 bg-gray-700 rounded-lg group hover:bg-gray-600 transition-colors"
                 >
                   <div className="flex items-center space-x-3 flex-1 min-w-0">
                     <div className="flex-shrink-0">
@@ -326,7 +321,7 @@ const UploadArea = () => {
                         <div className="mt-2">
                           <Progress 
                             value={uploadedFile.progress} 
-                            className="h-2 bg-gray-600"
+                            className="h-1 bg-gray-600"
                           />
                           <p className="text-xs text-gray-400 mt-1">
                             {uploadedFile.progress}% uploaded
@@ -339,7 +334,7 @@ const UploadArea = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => removeFile(uploadedFile.id)}
-                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all ml-2"
+                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all ml-2 flex-shrink-0"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -349,7 +344,7 @@ const UploadArea = () => {
           </div>
           
           {uploadedFiles.some(f => f.status === 'completed') && (
-            <div className="mt-6 pt-4 border-t border-gray-600">
+            <div className="mt-4 pt-3 border-t border-gray-600">
               <Button className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white">
                 Process Documents ({uploadedFiles.filter(f => f.status === 'completed').length} files)
               </Button>
