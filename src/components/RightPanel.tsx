@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useNotifications } from '@/components/ui/notification';
 import ChatInterface from './ChatInterface';
 
 interface RightPanelProps {
@@ -13,6 +14,7 @@ interface RightPanelProps {
 
 const RightPanel = ({ hasDocuments }: RightPanelProps) => {
   const [showChat, setShowChat] = useState(true);
+  const { addNotification } = useNotifications();
 
   const quickInsights = [
     { label: 'Key Themes', value: '12', trend: '+3' },
@@ -47,10 +49,28 @@ const RightPanel = ({ hasDocuments }: RightPanelProps) => {
     }
   };
 
+  const handleExportReport = () => {
+    addNotification({
+      type: 'success',
+      title: 'Export Started',
+      message: 'Your analysis report is being prepared for download'
+    });
+    console.log('Exporting report...');
+  };
+
+  const handleShareAnalysis = () => {
+    addNotification({
+      type: 'info',
+      title: 'Share Analysis',
+      message: 'Analysis sharing link has been copied to clipboard'
+    });
+    console.log('Sharing analysis...');
+  };
+
   return (
     <div className="h-full bg-gray-950 border-l border-gray-800 flex flex-col">
       {/* Quick Insights */}
-      <div className="p-4 border-b border-gray-800">
+      <div className="p-4 border-b border-gray-800 flex-shrink-0">
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-white flex items-center">
@@ -65,7 +85,9 @@ const RightPanel = ({ hasDocuments }: RightPanelProps) => {
                   <span className="text-xs text-gray-400">{insight.label}</span>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-semibold text-white">{insight.value}</span>
-                    <span className="text-xs text-green-400">{insight.trend}</span>
+                    <span className={`text-xs ${insight.trend.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}>
+                      {insight.trend}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -75,13 +97,14 @@ const RightPanel = ({ hasDocuments }: RightPanelProps) => {
       </div>
 
       {/* Export Options */}
-      <div className="p-4 border-b border-gray-800">
+      <div className="p-4 border-b border-gray-800 flex-shrink-0">
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-white mb-3">Quick Actions</h3>
           <Button
             variant="outline"
             size="sm"
-            className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800"
+            onClick={handleExportReport}
+            className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors touch-manipulation"
           >
             <Download className="h-4 w-4 mr-2" />
             Export Report
@@ -89,7 +112,8 @@ const RightPanel = ({ hasDocuments }: RightPanelProps) => {
           <Button
             variant="outline"
             size="sm"
-            className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800"
+            onClick={handleShareAnalysis}
+            className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors touch-manipulation"
           >
             <Share className="h-4 w-4 mr-2" />
             Share Analysis
@@ -98,7 +122,7 @@ const RightPanel = ({ hasDocuments }: RightPanelProps) => {
       </div>
 
       {/* Recent Activity */}
-      <div className="p-4 border-b border-gray-800">
+      <div className="p-4 border-b border-gray-800 flex-shrink-0">
         <h3 className="text-sm font-medium text-white mb-3 flex items-center">
           <Clock className="h-4 w-4 mr-2 text-gray-400" />
           Recent Activity
@@ -111,7 +135,7 @@ const RightPanel = ({ hasDocuments }: RightPanelProps) => {
                 <div key={index} className="flex items-start space-x-3">
                   <IconComponent className={`h-4 w-4 mt-0.5 ${getActivityColor(activity.type)}`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-white">{activity.name}</p>
+                    <p className="text-xs text-white truncate">{activity.name}</p>
                     <p className="text-xs text-gray-400">{activity.time}</p>
                   </div>
                 </div>
@@ -122,7 +146,7 @@ const RightPanel = ({ hasDocuments }: RightPanelProps) => {
       </div>
 
       {/* Chat Interface */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 min-h-0">
         <div className="h-full">
           <ChatInterface hasDocuments={hasDocuments} isEmbedded={true} />
         </div>

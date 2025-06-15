@@ -103,6 +103,11 @@ const Index = () => {
     switch (action) {
       case 'upload':
         setShowUpload(true);
+        addNotification({
+          type: 'info',
+          title: 'Upload Documents',
+          message: 'Ready to upload your files'
+        });
         break;
       case 'analyze':
         addNotification({
@@ -125,6 +130,12 @@ const Index = () => {
           message: 'Creating a new research project...'
         });
         break;
+      default:
+        addNotification({
+          type: 'info',
+          title: 'Action',
+          message: `Performed action: ${action}`
+        });
     }
   };
 
@@ -157,6 +168,11 @@ const Index = () => {
       return updatedFiles;
     });
     setHasDocuments(true);
+    addNotification({
+      type: 'success',
+      title: 'Files Processed',
+      message: `Successfully processed ${files.length} file(s)`
+    });
   };
 
   return (
@@ -166,13 +182,13 @@ const Index = () => {
         rightPanel={<RightPanel hasDocuments={hasDocuments} />}
         hasDocuments={hasDocuments}
       >
-        <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+        <div className="space-y-6 lg:space-y-8">
           {/* Welcome Section */}
-          <div className="mb-4 sm:mb-6 lg:mb-8">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent mb-2 sm:mb-3">
+          <div className="mb-6 lg:mb-8">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent mb-3">
               Research Dashboard
             </h1>
-            <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-gray-400 max-w-2xl">
+            <p className="text-base lg:text-lg text-gray-400 max-w-2xl">
               Upload documents, analyze content, and generate AI-powered insights with advanced document intelligence.
             </p>
           </div>
@@ -180,7 +196,7 @@ const Index = () => {
           {/* Enhanced Stats Grid */}
           <ResponsiveStatsGrid stats={stats} isMobile={isMobile} />
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
             {/* Quick Actions */}
             <div className="xl:col-span-1 order-1 xl:order-1">
               {isMobile ? (
@@ -203,12 +219,12 @@ const Index = () => {
             {/* Main Content Area */}
             <div className="xl:col-span-2 order-2 xl:order-2">
               {showUpload ? (
-                <div className="bg-gray-800/50 rounded-xl p-3 sm:p-4 lg:p-6 border border-gray-700/50 backdrop-blur-sm">
-                  <div className="flex items-center justify-between mb-3 sm:mb-4 lg:mb-6">
-                    <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-white">Upload Documents</h2>
+                <div className="bg-gray-800/50 rounded-xl p-4 lg:p-6 border border-gray-700/50 backdrop-blur-sm">
+                  <div className="flex items-center justify-between mb-4 lg:mb-6">
+                    <h2 className="text-lg lg:text-xl font-semibold text-white">Upload Documents</h2>
                     <button
                       onClick={() => setShowUpload(false)}
-                      className="text-gray-400 hover:text-white text-lg sm:text-xl transition-colors"
+                      className="text-gray-400 hover:text-white text-xl transition-colors touch-manipulation"
                     >
                       ✕
                     </button>
@@ -216,20 +232,20 @@ const Index = () => {
                   <EnhancedUploadArea onFilesProcessed={handleFilesProcessed} />
                 </div>
               ) : (
-                <div className="bg-gray-800/50 rounded-xl p-4 sm:p-6 lg:p-8 border border-gray-700/50 backdrop-blur-sm">
-                  <div className="text-center py-6 sm:py-8 lg:py-12">
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 lg:mb-6 shadow-lg">
-                      <FileText className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-white" />
+                <div className="bg-gray-800/50 rounded-xl p-6 lg:p-8 border border-gray-700/50 backdrop-blur-sm">
+                  <div className="text-center py-8 lg:py-12">
+                    <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl lg:rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6 shadow-lg">
+                      <FileText className="h-8 w-8 lg:h-10 lg:w-10 text-white" />
                     </div>
-                    <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-2 sm:mb-3">
+                    <h3 className="text-lg lg:text-xl font-semibold text-white mb-3">
                       Welcome to your AI Research Hub
                     </h3>
-                    <p className="text-sm sm:text-base text-gray-400 mb-4 sm:mb-6 lg:mb-8 max-w-md mx-auto px-4">
+                    <p className="text-sm lg:text-base text-gray-400 mb-6 lg:mb-8 max-w-md mx-auto">
                       Start by uploading documents to analyze, or explore the demo features to see what's possible.
                     </p>
                     <button
                       onClick={() => setShowUpload(true)}
-                      className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-4 py-2 sm:px-6 sm:py-3 lg:px-8 lg:py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 shadow-lg touch-manipulation"
+                      className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-3 lg:px-8 lg:py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 shadow-lg touch-manipulation"
                     >
                       Get Started
                     </button>

@@ -54,7 +54,7 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false, 
 
   // Simulate loading for better UX
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
+    const timer = setTimeout(() => setIsLoading(false), 500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -82,6 +82,13 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false, 
         } else if (rightPanelOpen) {
           setRightPanelOpen(false);
         }
+      }
+
+      // Command/Ctrl + K for search
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        setSearchOpen(true);
+        setTimeout(() => searchInputRef.current?.focus(), 100);
       }
 
       // Arrow key navigation for mobile tabs
@@ -153,12 +160,50 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false, 
     return 'User';
   };
 
-  const handleQuickAction = () => {
-    addNotification({
-      type: 'info',
-      title: 'Quick Action',
-      message: 'Upload documents to get started!'
-    });
+  const handleQuickAction = (action: string) => {
+    console.log(`Navigation action: ${action}`);
+    
+    // Handle navigation actions
+    switch (action) {
+      case 'dashboard':
+        setActiveTab('dashboard');
+        addNotification({
+          type: 'info',
+          title: 'Dashboard',
+          message: 'Navigating to dashboard'
+        });
+        break;
+      case 'documents':
+        setActiveTab('documents');
+        addNotification({
+          type: 'info',
+          title: 'Documents',
+          message: 'Viewing documents section'
+        });
+        break;
+      case 'analytics':
+        setActiveTab('analytics');
+        addNotification({
+          type: 'info',
+          title: 'Analytics',
+          message: 'Opening analytics view'
+        });
+        break;
+      case 'settings':
+        setActiveTab('settings');
+        addNotification({
+          type: 'info',
+          title: 'Settings',
+          message: 'Opening settings panel'
+        });
+        break;
+      default:
+        addNotification({
+          type: 'info',
+          title: 'Navigation',
+          message: `Action: ${action}`
+        });
+    }
   };
 
   if (isLoading) {
@@ -186,23 +231,23 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false, 
       </a>
 
       {/* Enhanced Mobile-First Header */}
-      <header className="sticky top-0 z-50 border-b border-gray-800/50 bg-gray-900/90 backdrop-blur-xl">
-        <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4 lg:px-6">
+      <header className="sticky top-0 z-50 border-b border-gray-800/50 bg-gray-900/95 backdrop-blur-xl">
+        <div className="flex h-14 sm:h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Left Section - Mobile Menu & Logo */}
-          <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
+          <div className="flex items-center space-x-3 lg:space-x-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-all duration-200 lg:hidden"
+              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-all duration-200 lg:hidden touch-manipulation"
               aria-label="Toggle sidebar"
             >
               <Menu className="h-5 w-5" />
             </Button>
             
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
-                <div className="w-2 h-2 sm:w-4 sm:h-4 bg-white rounded-sm opacity-90"></div>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-sm opacity-90"></div>
               </div>
               <div className="hidden sm:block lg:block">
                 <h1 className="text-sm sm:text-lg font-semibold text-white">AI Research Hub</h1>
@@ -215,13 +260,13 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false, 
           </div>
 
           {/* Right Section - Actions */}
-          <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-4">
+          <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3">
             {/* Desktop Search */}
             <div className="hidden lg:flex relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 ref={searchInputRef}
-                placeholder="Search documents... (Ctrl+K)"
+                placeholder="Search documents... (⌘K)"
                 className="pl-10 w-48 xl:w-64 bg-gray-800/50 border-gray-700/50 text-white placeholder-gray-400 focus:border-blue-500/50 focus:ring-blue-500/20"
               />
             </div>
@@ -230,7 +275,7 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false, 
             <Button 
               variant="ghost" 
               size="sm" 
-              className="lg:hidden p-2 text-gray-400 hover:text-white"
+              className="lg:hidden p-2 text-gray-400 hover:text-white touch-manipulation"
               onClick={() => setSearchOpen(true)}
               aria-label="Open search"
             >
@@ -242,8 +287,13 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false, 
             <Button 
               variant="ghost" 
               size="sm" 
-              className="relative p-2 text-gray-400 hover:text-white"
+              className="relative p-2 text-gray-400 hover:text-white touch-manipulation"
               aria-label="Notifications"
+              onClick={() => addNotification({
+                type: 'info',
+                title: 'Notifications',
+                message: 'No new notifications'
+              })}
             >
               <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
               <Badge className="absolute -top-1 -right-1 h-2 w-2 p-0 bg-red-500"></Badge>
@@ -254,7 +304,7 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false, 
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="xl:hidden p-2 text-gray-400 hover:text-white"
+                className="xl:hidden p-2 text-gray-400 hover:text-white touch-manipulation"
                 onClick={() => setRightPanelOpen(!rightPanelOpen)}
                 aria-label="Toggle insights panel"
               >
@@ -274,14 +324,14 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false, 
               <Input
                 ref={mobileSearchRef}
                 placeholder="Search documents..."
-                className="pl-10 pr-10 bg-gray-800/50 border-gray-700/50 text-white placeholder-gray-400 focus:border-blue-500/50 focus:ring-blue-500/20"
+                className="pl-10 pr-10 bg-gray-800/50 border-gray-700/50 text-white placeholder-gray-400 focus:border-blue-500/50 focus:ring-blue-500/20 touch-manipulation"
                 autoFocus
               />
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSearchOpen(false)}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-white"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-white touch-manipulation"
                 aria-label="Close search"
               >
                 <X className="h-4 w-4" />
@@ -317,8 +367,8 @@ const DashboardLayout = ({ children, sidebar, rightPanel, hasDocuments = false, 
 
         {/* Main Content */}
         <main id="main-content" className="flex-1 overflow-hidden min-w-0" role="main">
-          <div className="h-full overflow-y-auto">
-            <div className="p-3 sm:p-4 lg:p-6 xl:p-8 pb-20 lg:pb-8">
+          <div className="h-full overflow-y-auto overscroll-behavior-contain">
+            <div className="p-4 sm:p-6 lg:p-8 xl:p-10 pb-20 lg:pb-8 space-y-4 sm:space-y-6">
               {children}
             </div>
           </div>

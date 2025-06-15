@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { useNotifications } from '@/components/ui/notification';
 import ChatMessage from './chat/ChatMessage';
 import TypingIndicator from './chat/TypingIndicator';
 import SuggestedQuestions from './chat/SuggestedQuestions';
@@ -31,6 +32,7 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { addNotification } = useNotifications();
 
   const suggestedQuestions = [
     "What are the main themes across documents?",
@@ -52,38 +54,56 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
     scrollToBottom();
   }, [messages, isTyping]);
 
-  // Enhanced mobile performance with request throttling
+  // Enhanced AI response simulation with better error handling
   const simulateAIResponse = async (question: string) => {
     setIsTyping(true);
     setIsLoading(true);
     
-    // Add realistic delay with progress indication
-    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
-    
-    const responses = {
-      "What are the main themes across documents?": "Based on your uploaded documents, I've identified several key themes: data analysis methodologies, user experience patterns, and technological frameworks. The documents show a strong focus on evidence-based decision making and iterative improvement processes.",
-      "Find contradictions in the research": "I've found a few contradictions in your research materials. Document A suggests Method X is most effective, while Document C argues for Method Y. Additionally, there are conflicting timeline estimates between the project reports.",
-      "What gaps need more investigation?": "Several areas require deeper investigation: the long-term impact assessment is incomplete, user feedback from mobile platforms is missing, and the comparative analysis with competitor solutions needs expansion.",
-      "Generate follow-up research questions": "Here are some follow-up research questions: 1) How do the findings scale across different user demographics? 2) What are the cost implications of implementing these recommendations? 3) How might emerging technologies affect these conclusions?"
-    };
+    try {
+      // Add realistic delay with progress indication
+      await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
+      
+      const responses = {
+        "What are the main themes across documents?": "Based on your uploaded documents, I've identified several key themes: data analysis methodologies, user experience patterns, and technological frameworks. The documents show a strong focus on evidence-based decision making and iterative improvement processes.",
+        "Find contradictions in the research": "I've found a few contradictions in your research materials. Document A suggests Method X is most effective, while Document C argues for Method Y. Additionally, there are conflicting timeline estimates between the project reports.",
+        "What gaps need more investigation?": "Several areas require deeper investigation: the long-term impact assessment is incomplete, user feedback from mobile platforms is missing, and the comparative analysis with competitor solutions needs expansion.",
+        "Generate follow-up research questions": "Here are some follow-up research questions: 1) How do the findings scale across different user demographics? 2) What are the cost implications of implementing these recommendations? 3) How might emerging technologies affect these conclusions?"
+      };
 
-    const response = responses[question] || "I understand your question about the documents. Based on the research materials you've uploaded, I can provide insights and analysis. Could you be more specific about what aspect you'd like me to focus on?";
+      const response = responses[question as keyof typeof responses] || 
+        `I understand your question about the documents. Based on the research materials you've uploaded, I can provide insights and analysis. Could you be more specific about what aspect you'd like me to focus on?`;
 
-    setIsTyping(false);
-    setIsLoading(false);
-    
-    const aiMessage: Message = {
-      id: Date.now().toString() + '-ai',
-      text: response,
-      sender: 'ai',
-      timestamp: new Date()
-    };
+      const aiMessage: Message = {
+        id: Date.now().toString() + '-ai',
+        text: response,
+        sender: 'ai',
+        timestamp: new Date()
+      };
 
-    setMessages(prev => [...prev, aiMessage]);
+      setMessages(prev => [...prev, aiMessage]);
 
-    // Haptic feedback for mobile
-    if ('vibrate' in navigator) {
-      navigator.vibrate(50);
+      // Success notification
+      addNotification({
+        type: 'success',
+        title: 'AI Response',
+        message: 'Analysis complete'
+      });
+
+    } catch (error) {
+      console.error('Error in AI response:', error);
+      addNotification({
+        type: 'destructive',
+        title: 'Error',
+        message: 'Failed to get AI response. Please try again.'
+      });
+    } finally {
+      setIsTyping(false);
+      setIsLoading(false);
+      
+      // Haptic feedback for mobile
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
     }
   };
 
@@ -99,6 +119,13 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
+
+    // Show notification for user message
+    addNotification({
+      type: 'info',
+      title: 'Message Sent',
+      message: 'Processing your request...'
+    });
 
     // Blur input on mobile to hide keyboard
     if (window.innerWidth < 768) {
@@ -121,13 +148,24 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
 
   const clearChatHistory = () => {
     setMessages([]);
+    addNotification({
+      type: 'info',
+      title: 'Chat Cleared',
+      message: 'Chat history has been cleared'
+    });
     if ('vibrate' in navigator) {
       navigator.vibrate(100);
     }
   };
 
   const copyMessage = (text: string) => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(text).then(() => {
+      addNotification({
+        type: 'success',
+        title: 'Copied',
+        message: 'Message copied to clipboard'
+      });
+    });
     if ('vibrate' in navigator) {
       navigator.vibrate(50);
     }
@@ -136,7 +174,7 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
   if (isEmbedded) {
     return (
       <Card className="h-full bg-gray-900 border-gray-800">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 flex-shrink-0">
           <CardTitle className="text-white flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <MessageSquare className="h-5 w-5 text-cyan-400" />
@@ -144,14 +182,14 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white touch-manipulation">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+              <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
                 <DropdownMenuItem 
                   onClick={clearChatHistory}
-                  className="text-gray-300 hover:bg-gray-700"
+                  className="text-gray-300 hover:bg-gray-700 focus:bg-gray-700"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Clear Chat
@@ -160,7 +198,7 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
             </DropdownMenu>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0 h-[calc(100%-5rem)] flex flex-col">
+        <CardContent className="p-0 flex-1 flex flex-col min-h-0">
           <ScrollArea ref={scrollAreaRef} className="flex-1 p-4 overscroll-behavior-contain">
             <div className="space-y-4">
               {isLoading && messages.length === 0 && (
@@ -193,7 +231,7 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
             </div>
           </ScrollArea>
 
-          <div className="p-4 border-t border-gray-700">
+          <div className="p-4 border-t border-gray-700 flex-shrink-0">
             <div className="flex space-x-2">
               <Input
                 ref={inputRef}
@@ -221,6 +259,7 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
     );
   }
 
+  
   return (
     <div className="fixed bottom-0 right-6 z-50 w-96 max-w-[calc(100vw-3rem)]">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -243,10 +282,10 @@ const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps)
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                  <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
                     <DropdownMenuItem 
                       onClick={clearChatHistory}
-                      className="text-gray-300 hover:bg-gray-700"
+                      className="text-gray-300 hover:bg-gray-700 focus:bg-gray-700"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Clear Chat History
