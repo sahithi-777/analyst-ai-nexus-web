@@ -17,28 +17,54 @@ serve(async (req) => {
   try {
     const { message, documents, chatHistory } = await req.json();
     
+    console.log(`Received chat request: "${message}" with ${documents?.length || 0} documents`);
+    
     if (!anthropicApiKey) {
-      throw new Error('Anthropic API key not configured');
+      console.error('ANTHROPIC_API_KEY not found in environment variables');
+      return new Response(JSON.stringify({ 
+        error: 'Anthropic API key not configured',
+        fallbackResponse: "I'm currently unable to connect to Claude AI due to missing API key configuration. Please check the Supabase Edge Function Secrets to ensure ANTHROPIC_API_KEY is properly set."
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    console.log(`Processing chat message with ${documents.length} documents context`);
+    if (!message || typeof message !== 'string') {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid message parameter',
+        fallbackResponse: "I didn't receive a valid question. Please try asking your question again."
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    // Prepare document context
-    const documentContext = documents.map(doc => `
-Document: ${doc.name}
-Content: ${doc.extractedText || doc.content}
-Topic: ${doc.metadata?.topic || 'Unknown'}
-Category: ${doc.metadata?.category || 'Unknown'}
----
-    `).join('\n');
+    console.log(`Processing chat message with ${documents?.length || 0} documents context`);
 
-    // Prepare chat history
-    const historyContext = chatHistory.map(msg => 
+    // Prepare document context with better formatting
+    const documentContext = (documents || []).map((doc, index) => {
+      const content = doc.extractedText || doc.content || '';
+      const metadata = doc.metadata || {};
+      
+      return `
+Document ${index + 1}: ${doc.name || 'Unnamed Document'}
+Topic: ${metadata.topic || 'Unknown'}
+Category: ${metadata.category || 'Unknown'}
+Word Count: ${metadata.wordCount || 'Unknown'}
+
+Content Preview:
+${content.substring(0, 2000)}${content.length > 2000 ? '...' : ''}
+
+---`;
+    }).join('\n');
+
+    // Prepare chat history with better formatting
+    const historyContext = (chatHistory || []).map(msg => 
       `${msg.sender === 'user' ? 'Human' : 'Assistant'}: ${msg.text}`
     ).join('\n');
 
-    const chatPrompt = `
-You are an expert research assistant analyzing documents. You have access to the following documents:
+    const chatPrompt = `You are Claude, an expert research assistant analyzing documents. You have access to the following documents:
 
 ${documentContext}
 
@@ -47,10 +73,15 @@ ${historyContext}
 
 Current question: ${message}
 
-Please provide a helpful, accurate response based on the document content. When referencing specific information, mention which document it comes from. If you find contradictions or interesting connections between documents, highlight them. Be conversational but professional.
+Please provide a helpful, accurate, and detailed response based on the document content. When referencing specific information, mention which document it comes from. If you find contradictions or interesting connections between documents, highlight them clearly. 
+
+Be conversational but professional. Use formatting like bullet points, headings, and emphasis where appropriate to make your response easy to read.
 
 If the question requires information not available in the documents, say so clearly and suggest what additional information might be helpful.
-`;
+
+Focus on being practical and actionable in your insights.`;
+
+    console.log('Sending request to Anthropic API...');
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -61,7 +92,8 @@ If the question requires information not available in the documents, say so clea
       },
       body: JSON.stringify({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1500,
+        max_tokens: 2000,
+        temperature: 0.7,
         messages: [
           {
             role: 'user',
@@ -73,27 +105,62 @@ If the question requires information not available in the documents, say so clea
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Anthropic API error:', errorText);
-      throw new Error(`Anthropic API error: ${response.status}`);
+      console.error('Anthropic API error:', response.status, errorText);
+      
+      let errorMessage = `Anthropic API error: ${response.status}`;
+      let fallbackMessage = "I'm having trouble connecting to Claude AI right now. Please try again in a moment.";
+      
+      if (response.status === 401) {
+        errorMessage = 'Invalid Anthropic API key';
+        fallbackMessage = "The API key appears to be invalid. Please check the ANTHROPIC_API_KEY in Supabase Edge Function Secrets.";
+      } else if (response.status === 429) {
+        errorMessage = 'Rate limit exceeded';
+        fallbackMessage = "Too many requests to Claude AI. Please wait a moment before trying again.";
+      } else if (response.status >= 500) {
+        errorMessage = 'Anthropic service unavailable';
+        fallbackMessage = "Claude AI service is temporarily unavailable. Please try again later.";
+      }
+      
+      return new Response(JSON.stringify({ 
+        error: errorMessage,
+        fallbackResponse: fallbackMessage
+      }), {
+        status: response.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
-    const aiResponse = data.content[0].text;
+    
+    if (!data.content || !data.content[0] || !data.content[0].text) {
+      console.error('Unexpected response format from Anthropic:', data);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid response format from Anthropic',
+        fallbackResponse: "I received an unexpected response format. Please try your question again."
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    console.log('Chat response generated successfully');
+    const aiResponse = data.content[0].text;
+    console.log('Chat response generated successfully, length:', aiResponse.length);
 
     return new Response(JSON.stringify({ 
       response: aiResponse,
-      model: 'claude-3-5-sonnet-20241022'
+      model: 'claude-3-5-sonnet-20241022',
+      usage: data.usage || {}
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error in chat-with-documents function:', error);
+    console.error('Error stack:', error.stack);
+    
     return new Response(JSON.stringify({ 
       error: error.message,
-      fallbackResponse: "I'm sorry, I'm having trouble processing your request right now. Please try again."
+      fallbackResponse: "I'm experiencing technical difficulties. Please try your question again."
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
