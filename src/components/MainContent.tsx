@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { BarChart, FileText, Brain, TrendingUp, Upload, Settings, Share, Eye, Trash2, Download, Search, MoreVertical } from 'lucide-react';
+import { FileText, Brain, TrendingUp, Upload, Search, MoreVertical, Download, Trash2, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,16 +12,15 @@ import UploadArea from './UploadArea';
 import AnalysisInterface from './AnalysisInterface';
 import Welcome from './Welcome';
 import DocumentPreview from './DocumentPreview';
-import SettingsPanel from './SettingsPanel';
-import ExportDialog from './ExportDialog';
 import LoadingSkeleton from './LoadingSkeleton';
 
-const MainContent = () => {
+interface MainContentProps {
+  hasDocuments: boolean;
+}
+
+const MainContent = ({ hasDocuments }: MainContentProps) => {
   const [activeTab, setActiveTab] = useState('upload');
-  const [hasUploadedFiles, setHasUploadedFiles] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(true);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showExport, setShowExport] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [selectedFiles, setSelectedFiles] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,15 +29,7 @@ const MainContent = () => {
   const stats = [
     { label: 'Documents Processed', value: '142', icon: FileText, color: 'text-blue-400' },
     { label: 'Insights Generated', value: '89', icon: Brain, color: 'text-cyan-400' },
-    { label: 'Analysis Reports', value: '23', icon: BarChart, color: 'text-green-400' },
     { label: 'Trend Predictions', value: '15', icon: TrendingUp, color: 'text-purple-400' },
-  ];
-
-  const analysisHistory = [
-    { id: 1, name: 'Q4 Market Analysis', date: '2 hours ago', docs: 5, status: 'completed', insights: 12 },
-    { id: 2, name: 'Competitor Research', date: '1 day ago', docs: 3, status: 'completed', insights: 8 },
-    { id: 3, name: 'Industry Trends Study', date: '3 days ago', docs: 8, status: 'completed', insights: 15 },
-    { id: 4, name: 'Customer Behavior Analysis', date: '1 week ago', docs: 12, status: 'completed', insights: 22 },
   ];
 
   const recentDocuments = [
@@ -51,11 +43,6 @@ const MainContent = () => {
     doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     doc.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
   );
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => setHasUploadedFiles(true), 3000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleStartTour = () => {
     setShowWelcome(false);
@@ -78,19 +65,11 @@ const MainContent = () => {
     setSelectedFiles([]);
   };
 
-  const handleReloadAnalysis = (analysisId: number) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setActiveTab('analysis');
-    }, 2000);
-  };
-
   if (showWelcome) {
     return (
       <>
         <main className="flex-1 p-6 bg-gray-950">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <LoadingSkeleton type="dashboard" />
           </div>
         </main>
@@ -105,7 +84,7 @@ const MainContent = () => {
   if (isLoading) {
     return (
       <main className="flex-1 p-6 bg-gray-950">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <LoadingSkeleton type="dashboard" />
         </div>
       </main>
@@ -114,38 +93,18 @@ const MainContent = () => {
 
   return (
     <>
-      <main className="flex-1 p-6 bg-gray-950">
-        <div className="max-w-6xl mx-auto space-y-6">
+      <main className="flex-1 p-6 bg-gray-950 overflow-y-auto">
+        <div className="max-w-4xl mx-auto space-y-6">
           {/* Header Section */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Research Dashboard</h2>
-              <p className="text-gray-400">Analyze documents, generate insights, and track research progress</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button
-                onClick={() => setShowExport(true)}
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-800"
-              >
-                <Share className="h-4 w-4 mr-2" />
-                Export & Share
-              </Button>
-              <Button
-                onClick={() => setShowSettings(true)}
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-800"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
-            </div>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">Research Dashboard</h1>
+            <p className="text-gray-400">Analyze documents, generate insights, and track research progress</p>
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {stats.map((stat, index) => (
-              <Card key={index} className="bg-gray-900 border-gray-800 hover:bg-gray-800 transition-colors cursor-pointer shadow-lg">
+              <Card key={index} className="bg-gray-900 border-gray-800 hover:bg-gray-800 transition-colors">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -161,163 +120,8 @@ const MainContent = () => {
             ))}
           </div>
 
-          {/* Analysis History */}
-          <Card className="bg-gray-900 border-gray-800 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center justify-between">
-                <div className="flex items-center">
-                  <BarChart className="h-5 w-5 mr-2 text-green-400" />
-                  Analysis History
-                </div>
-                <Button variant="ghost" size="sm" className="text-gray-400">
-                  View All
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {analysisHistory.map((analysis) => (
-                  <div
-                    key={analysis.id}
-                    className="flex items-center justify-between p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                        <Brain className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-white">{analysis.name}</h3>
-                        <div className="flex items-center space-x-3 text-sm text-gray-400">
-                          <span>{analysis.date}</span>
-                          <span>•</span>
-                          <span>{analysis.docs} documents</span>
-                          <span>•</span>
-                          <span>{analysis.insights} insights</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="default" className="bg-green-600">
-                        {analysis.status}
-                      </Badge>
-                      <Button
-                        onClick={() => handleReloadAnalysis(analysis.id)}
-                        variant="ghost"
-                        size="sm"
-                        className="text-gray-400 hover:text-white"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Document Management */}
-          <Card className="bg-gray-900 border-gray-800 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center justify-between">
-                <div className="flex items-center">
-                  <FileText className="h-5 w-5 mr-2 text-blue-400" />
-                  Document Library
-                </div>
-                <div className="flex items-center space-x-3">
-                  {selectedFiles.length > 0 && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="border-gray-600 text-gray-300">
-                          Bulk Actions ({selectedFiles.length})
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="bg-gray-800 border-gray-700">
-                        <DropdownMenuItem onClick={() => handleBulkAction('download')}>
-                          <Download className="h-4 w-4 mr-2" />
-                          Download Selected
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleBulkAction('delete')}>
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Selected
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search documents..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 bg-gray-800 border-gray-600 text-white w-64"
-                    />
-                  </div>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {filteredDocuments.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="flex items-center space-x-4 p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
-                  >
-                    <Checkbox
-                      checked={selectedFiles.includes(doc.id)}
-                      onCheckedChange={() => handleFileSelect(doc.id)}
-                    />
-                    <div className="flex items-center space-x-3 flex-1">
-                      <FileText className="h-8 w-8 text-blue-400" />
-                      <div className="flex-1 min-w-0">
-                        <h3 
-                          className="font-medium text-white truncate hover:text-blue-400 cursor-pointer transition-colors"
-                          onClick={() => handleDocumentClick(doc)}
-                        >
-                          {doc.name}
-                        </h3>
-                        <div className="flex items-center space-x-3 text-sm text-gray-400">
-                          <span>{doc.size}</span>
-                          <span>•</span>
-                          <span>{doc.date}</span>
-                        </div>
-                        <div className="flex items-center space-x-2 mt-1">
-                          {doc.tags.map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="bg-gray-800 border-gray-700">
-                        <DropdownMenuItem onClick={() => handleDocumentClick(doc)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          Preview
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Tabbed Interface */}
-          <Card className="bg-gray-900 border-gray-800 shadow-lg">
+          {/* Main Tabbed Interface */}
+          <Card className="bg-gray-900 border-gray-800">
             <CardContent className="p-0">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="border-b border-gray-800 px-6 pt-6">
@@ -330,25 +134,18 @@ const MainContent = () => {
                       Upload & Process
                     </TabsTrigger>
                     <TabsTrigger 
+                      value="documents"
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Document Library
+                    </TabsTrigger>
+                    <TabsTrigger 
                       value="analysis"
                       className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
                     >
                       <Brain className="h-4 w-4 mr-2" />
                       AI Analysis
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="reports"
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Reports
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="insights"
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
-                    >
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Insights
                     </TabsTrigger>
                   </TabsList>
                 </div>
@@ -356,7 +153,103 @@ const MainContent = () => {
                 <div className="p-6">
                   <TabsContent value="upload" className="mt-0 space-y-6">
                     <UploadArea />
-                    <AnalysisInterface hasUploadedFiles={hasUploadedFiles} />
+                    <AnalysisInterface hasUploadedFiles={hasDocuments} />
+                  </TabsContent>
+
+                  <TabsContent value="documents" className="mt-0">
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-white">Document Library</h3>
+                        <div className="flex items-center space-x-3">
+                          {selectedFiles.length > 0 && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="border-gray-600 text-gray-300">
+                                  Bulk Actions ({selectedFiles.length})
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="bg-gray-800 border-gray-700">
+                                <DropdownMenuItem onClick={() => handleBulkAction('download')}>
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Download Selected
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleBulkAction('delete')}>
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Selected
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                              placeholder="Search documents..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="pl-10 bg-gray-800 border-gray-600 text-white w-64"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        {filteredDocuments.map((doc) => (
+                          <div
+                            key={doc.id}
+                            className="flex items-center space-x-4 p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
+                          >
+                            <Checkbox
+                              checked={selectedFiles.includes(doc.id)}
+                              onCheckedChange={() => handleFileSelect(doc.id)}
+                            />
+                            <div className="flex items-center space-x-3 flex-1">
+                              <FileText className="h-8 w-8 text-blue-400" />
+                              <div className="flex-1 min-w-0">
+                                <h3 
+                                  className="font-medium text-white truncate hover:text-blue-400 cursor-pointer transition-colors"
+                                  onClick={() => handleDocumentClick(doc)}
+                                >
+                                  {doc.name}
+                                </h3>
+                                <div className="flex items-center space-x-3 text-sm text-gray-400">
+                                  <span>{doc.size}</span>
+                                  <span>•</span>
+                                  <span>{doc.date}</span>
+                                </div>
+                                <div className="flex items-center space-x-2 mt-1">
+                                  {doc.tags.map((tag) => (
+                                    <Badge key={tag} variant="secondary" className="text-xs">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="bg-gray-800 border-gray-700">
+                                <DropdownMenuItem onClick={() => handleDocumentClick(doc)}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Preview
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Download
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </TabsContent>
 
                   <TabsContent value="analysis" className="mt-0">
@@ -364,22 +257,6 @@ const MainContent = () => {
                       <Brain className="h-16 w-16 text-gray-600 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold text-white mb-2">No Analysis Available</h3>
                       <p className="text-gray-400">Upload documents to start AI-powered analysis</p>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="reports" className="mt-0">
-                    <div className="text-center py-12">
-                      <FileText className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-white mb-2">No Reports Generated</h3>
-                      <p className="text-gray-400">Process documents to generate comprehensive reports</p>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="insights" className="mt-0">
-                    <div className="text-center py-12">
-                      <TrendingUp className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-white mb-2">No Insights Available</h3>
-                      <p className="text-gray-400">Analyze documents to discover key insights and trends</p>
                     </div>
                   </TabsContent>
                 </div>
@@ -394,14 +271,6 @@ const MainContent = () => {
         isOpen={!!selectedDocument}
         onClose={() => setSelectedDocument(null)}
         document={selectedDocument}
-      />
-      <SettingsPanel
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-      />
-      <ExportDialog
-        isOpen={showExport}
-        onClose={() => setShowExport(false)}
       />
     </>
   );

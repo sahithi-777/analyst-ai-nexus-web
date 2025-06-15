@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import MainContent from '../components/MainContent';
-import ChatInterface from '../components/ChatInterface';
+import RightPanel from '../components/RightPanel';
 
 const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -20,8 +21,6 @@ const Index = () => {
 
   // Simulate document upload detection
   useEffect(() => {
-    // In a real implementation, this would be passed from UploadArea
-    // For demo purposes, we'll set it to true after a delay
     const timer = setTimeout(() => setHasDocuments(true), 3000);
     return () => clearTimeout(timer);
   }, []);
@@ -57,12 +56,21 @@ const Index = () => {
     <div className="min-h-screen bg-gray-950">
       <Header onToggleSidebar={toggleSidebar} />
       <div className="flex h-[calc(100vh-80px)]">
-        <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
-        <MainContent />
+        {/* Fixed Sidebar - 20% width */}
+        <div className="w-80 flex-shrink-0">
+          <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
+        </div>
+        
+        {/* Main Content Area - 60% width */}
+        <div className="flex-1 min-w-0">
+          <MainContent hasDocuments={hasDocuments} />
+        </div>
+        
+        {/* Right Panel - 20% width */}
+        <div className="w-80 flex-shrink-0 hidden xl:block">
+          <RightPanel hasDocuments={hasDocuments} />
+        </div>
       </div>
-      
-      {/* Chat Interface */}
-      <ChatInterface hasDocuments={hasDocuments} />
     </div>
   );
 };

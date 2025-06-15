@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Minimize2, Maximize2, Send, MoreVertical, Copy, Trash2 } from 'lucide-react';
+import { MessageSquare, Send, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ChatMessage from './chat/ChatMessage';
 import TypingIndicator from './chat/TypingIndicator';
 import SuggestedQuestions from './chat/SuggestedQuestions';
@@ -18,10 +18,10 @@ interface Message {
 
 interface ChatInterfaceProps {
   hasDocuments: boolean;
+  isEmbedded?: boolean;
 }
 
-const ChatInterface = ({ hasDocuments }: ChatInterfaceProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+const ChatInterface = ({ hasDocuments, isEmbedded = false }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -51,7 +51,6 @@ const ChatInterface = ({ hasDocuments }: ChatInterfaceProps) => {
   const simulateAIResponse = async (question: string) => {
     setIsTyping(true);
     
-    // Simulate AI thinking time
     await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
     
     const responses = {
@@ -88,7 +87,6 @@ const ChatInterface = ({ hasDocuments }: ChatInterfaceProps) => {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
 
-    // Simulate AI response
     await simulateAIResponse(text.trim());
   };
 
@@ -110,6 +108,90 @@ const ChatInterface = ({ hasDocuments }: ChatInterfaceProps) => {
   const copyMessage = (text: string) => {
     navigator.clipboard.writeText(text);
   };
+
+  if (isEmbedded) {
+    return (
+      <Card className="h-full bg-gray-900 border-gray-800">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-white flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <MessageSquare className="h-5 w-5 text-cyan-400" />
+              <span className="text-sm">Research Assistant</span>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                <DropdownMenuItem 
+                  onClick={clearChatHistory}
+                  className="text-gray-300 hover:bg-gray-700"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear Chat
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 h-[calc(100%-5rem)] flex flex-col">
+          <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
+            <div className="space-y-4">
+              {messages.length === 0 && !hasDocuments && (
+                <div className="text-center py-8">
+                  <MessageSquare className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400 text-sm">Upload documents to start asking questions</p>
+                </div>
+              )}
+              
+              {messages.length === 0 && hasDocuments && (
+                <SuggestedQuestions 
+                  questions={suggestedQuestions}
+                  onQuestionClick={handleSuggestedQuestion}
+                />
+              )}
+
+              {messages.map((message) => (
+                <ChatMessage
+                  key={message.id}
+                  message={message}
+                  onCopy={copyMessage}
+                />
+              ))}
+
+              {isTyping && <TypingIndicator />}
+            </div>
+          </ScrollArea>
+
+          <div className="p-4 border-t border-gray-700">
+            <div className="flex space-x-2">
+              <Input
+                ref={inputRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Ask about your research..."
+                className="flex-1 bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
+                disabled={!hasDocuments}
+              />
+              <Button
+                onClick={() => handleSendMessage(inputValue)}
+                disabled={!inputValue.trim() || !hasDocuments || isTyping}
+                className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+            {!hasDocuments && (
+              <p className="text-xs text-gray-500 mt-2">Upload documents first to enable chat</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="fixed bottom-0 right-6 z-50 w-96 max-w-[calc(100vw-3rem)]">
